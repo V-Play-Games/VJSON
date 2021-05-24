@@ -25,12 +25,10 @@ import java.util.function.Function;
  *
  * @author Vaibhav Nargwani
  */
-public class JSONObject extends JSONValue implements Map<String, JSONValue>, Cloneable {
-    LinkedHashMap<String, JSONValue> map;
+public class JSONObject extends JSONValue implements Map<String, JSONValue> {
+    LinkedHashMap<String, JSONValue> map = new LinkedHashMap<>();
 
-    public JSONObject() {
-        this(new LinkedHashMap<>());
-    }
+    public JSONObject() {}
 
     /**
      * Creates a new JSONObject from a Map and copies key-value pairs
@@ -38,12 +36,7 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
      * @param map the map to copy key-value pairs from
      */
     public JSONObject(Map<?, ?> map) {
-        this();
         map.forEach((k, v) -> put(String.valueOf(k), JSONValue.of(v)));
-    }
-
-    JSONObject(LinkedHashMap<String, JSONValue> map) {
-        this.map = map;
     }
 
     /**
@@ -64,20 +57,13 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
     }
 
     @Override
-    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object obj) {
-        return map.equals(obj);
+        return obj instanceof JSONObject && map.equals(((JSONObject) obj).map);
     }
 
     @Override
     public int hashCode() {
         return map.hashCode();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected JSONObject clone() {
-        return new JSONObject((LinkedHashMap<String, JSONValue>) map.clone());
     }
 
     @Override
