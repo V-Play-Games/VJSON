@@ -34,10 +34,10 @@ import java.util.function.Predicate;
 // TODO: add toPrettyString() method
 @SuppressWarnings("unused")
 public class JSONValue implements JSONable {
+    public static final JSONValue NULL = new JSONValue(null);
     public static final JSONValue TRUE = new JSONValue(true);
     public static final JSONValue FALSE = new JSONValue(false);
-    public static final JSONValue NULL = new JSONValue(null);
-    public static JSONParser parser;
+    private static JSONParser parser;
     private final Object o;
     private Type type;
 
@@ -102,6 +102,16 @@ public class JSONValue implements JSONable {
      */
     public static String escape(String s) {
         return s == null ? null : s.replaceAll("([\"\\\\\b\f\n\r\t/])", "\\\\$1");
+    }
+
+    public static String escape(char c) {
+        return c == '\\' ? "\\\\" :
+            c == '\b' ? "\\b" :
+                c == '\f' ? "\\f" :
+                    c == '\n' ? "\\n" :
+                        c == '\r' ? "\\r" :
+                            c == '\t' ? "\\t" :
+                                c == '/' ? "\\/" : c+"";
     }
 
     public static String unescape(String s) {
@@ -199,7 +209,7 @@ public class JSONValue implements JSONable {
         return (JSONArray) o;
     }
 
-    public <T> ArrayList<T> asList(Function<JSONValue, T> converter) {
+    public <T> List<T> asList(Function<JSONValue, T> converter) {
         return asArray()
             .stream()
             .map(converter)

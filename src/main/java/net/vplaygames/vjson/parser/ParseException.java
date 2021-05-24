@@ -21,20 +21,29 @@ public class ParseException extends RuntimeException {
     public static final int UNEXPECTED_CHAR = 0;
     public static final int UNEXPECTED_TOKEN = 1;
     public static final int UNEXPECTED_EXCEPTION = 2;
-    private int errorType;
-    private int position;
-    private Object unexpectedObject;
+    private final int errorType;
+    private final int position;
+    private final Object unexpectedObject;
 
-    public ParseException(int position, int errorType, Object unexpectedObject) {
+    public ParseException(int position, char c) {
+        super("Unexpected character (" + JSONValue.escape(c + "") + ") at position " + position);
         this.position = position;
-        this.errorType = errorType;
-        this.unexpectedObject = unexpectedObject;
+        this.errorType = UNEXPECTED_CHAR;
+        this.unexpectedObject = c;
     }
 
-    public ParseException(Throwable cause) {
-        super(cause);
-        this.position = -1;
+    public ParseException(int position, String token) {
+        super("Unexpected token " + JSONValue.escape(token) + " at position " + position);
+        this.position = position;
+        this.errorType = UNEXPECTED_TOKEN;
+        this.unexpectedObject = token;
+    }
+
+    public ParseException(int position, Throwable cause) {
+        super("Unexpected exception at position " + position, cause);
+        this.position = position;
         this.errorType = UNEXPECTED_EXCEPTION;
+        this.unexpectedObject = cause;
     }
 
     public int getErrorType() {
@@ -57,18 +66,5 @@ public class ParseException extends RuntimeException {
      */
     public Object getUnexpectedObject() {
         return unexpectedObject;
-    }
-
-    public String toString() {
-        switch (errorType) {
-            case UNEXPECTED_CHAR:
-                return "Unexpected character (" + JSONValue.escape(unexpectedObject + "") + ") at position " + position + ".";
-            case UNEXPECTED_TOKEN:
-                return "Unexpected token " + unexpectedObject + " at position " + position + ".";
-            case UNEXPECTED_EXCEPTION:
-                return "Unexpected exception at position " + position + ": " + JSONValue.escape(unexpectedObject + "");
-            default:
-                return "Unknown error at position " + position + ".";
-        }
     }
 }
