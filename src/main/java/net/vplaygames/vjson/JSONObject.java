@@ -26,9 +26,10 @@ import java.util.function.Function;
  * @author Vaibhav Nargwani
  */
 public class JSONObject extends JSONValue implements Map<String, JSONValue>, Cloneable {
-    LinkedHashMap<String, JSONValue> map = new LinkedHashMap<>();
+    LinkedHashMap<String, JSONValue> map;
 
     public JSONObject() {
+        this(new LinkedHashMap<>());
     }
 
     /**
@@ -37,7 +38,12 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
      * @param map the map to copy key-value pairs from
      */
     public JSONObject(Map<?, ?> map) {
+        this();
         map.forEach((k, v) -> put(String.valueOf(k), JSONValue.of(v)));
+    }
+
+    JSONObject(LinkedHashMap<String, JSONValue> map) {
+        this.map = map;
     }
 
     /**
@@ -71,14 +77,7 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
     @Override
     @SuppressWarnings("unchecked")
     protected JSONObject clone() {
-        try {
-            JSONObject clone = (JSONObject) super.clone();
-            clone.map = (LinkedHashMap<String, JSONValue>) map.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            // shouldn't happen, since the class is Cloneable
-            throw new InternalError();
-        }
+        return new JSONObject((LinkedHashMap<String, JSONValue>) map.clone());
     }
 
     @Override

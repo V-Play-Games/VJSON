@@ -23,6 +23,14 @@ import java.util.function.UnaryOperator;
 public class JSONArray extends JSONValue implements List<JSONValue>, RandomAccess, Cloneable {
     ArrayList<JSONValue> list;
 
+    private JSONArray(ArrayList<JSONValue> list) {
+        this.list = list;
+    }
+
+    public JSONArray() {
+        this(new ArrayList<>());
+    }
+
     /**
      * Convert a list to a JSON String
      *
@@ -51,14 +59,7 @@ public class JSONArray extends JSONValue implements List<JSONValue>, RandomAcces
     @Override
     @SuppressWarnings("unchecked")
     protected JSONArray clone() {
-        try {
-            JSONArray clone = (JSONArray) super.clone();
-            clone.list = (ArrayList<JSONValue>) list.clone();
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            // shouldn't happen, since the class is Cloneable
-            throw new InternalError();
-        }
+        return new JSONArray((ArrayList<JSONValue>) list.clone());
     }
 
     @Override

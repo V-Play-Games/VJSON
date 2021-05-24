@@ -234,9 +234,8 @@ public class JSONValue implements JSONable {
             this.toString = toString;
         }
 
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
         public static Type of(Object o) {
-            return Arrays.stream(values()).filter(t -> t.checker.test(o)).findFirst().get();
+            return Arrays.stream(values()).filter(t -> t.checker.test(o)).findFirst().orElse(UNKNOWN);
         }
 
         public String toString(Object o) {
