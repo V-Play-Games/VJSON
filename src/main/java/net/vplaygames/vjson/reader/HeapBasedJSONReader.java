@@ -268,7 +268,7 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
             }
             switch (ACTION[state]) {
                 case 1:
-                    throw new ParseException(position, ParseException.UNEXPECTED_CHAR, buffer[startRead]);
+                    throw new ParseException(position, buffer[startRead]);
                 case 2:
                     currentToken = Long.parseLong(getString(0));
                     return NUMBER;
@@ -329,7 +329,7 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
                     try {
                         builder.append((char) Integer.parseInt(getString(2), 16));
                     } catch (Exception e) {
-                        throw new ParseException(position, ParseException.UNEXPECTED_EXCEPTION, e);
+                        throw new ParseException(position, e);
                     }
                     break;
                 case 11:

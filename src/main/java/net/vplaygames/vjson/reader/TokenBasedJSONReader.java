@@ -81,7 +81,7 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                 lastPos = 1;
                 buffer();
             } catch (IOException exc) {
-                throw new ParseException(currentPosition, ParseException.UNEXPECTED_EXCEPTION, exc);
+                throw new ParseException(currentPosition, exc);
             }
         }
         return buffer[++currentPosition];

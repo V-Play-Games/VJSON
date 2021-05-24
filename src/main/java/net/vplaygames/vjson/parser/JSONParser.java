@@ -53,7 +53,7 @@ public class JSONParser {
         try {
             return parse(new TokenBasedJSONReader(reader, true), containerFactory, true);
         } catch (IOException ie) {
-            throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
+            throw new ParseException(-1, ie);
         }
     }
 
@@ -65,7 +65,7 @@ public class JSONParser {
         try {
             return parse(new TokenBasedJSONReader(s), containerFactory, true);
         } catch (IOException ie) {
-            throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
+            throw new ParseException(-1, ie);
         }
     }
 
@@ -77,7 +77,7 @@ public class JSONParser {
         try {
             return parse(new TokenBasedJSONReader(in), containerFactory, true);
         } catch (IOException ie) {
-            throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
+            throw new ParseException(-1, ie);
         }
     }
 
@@ -93,12 +93,13 @@ public class JSONParser {
         try {
             return parseValue(reader, containerFactory == null ? ContainerFactory.defaultInstance() : containerFactory);
         } catch (IOException ie) {
-            throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_EXCEPTION, ie);
+            throw new ParseException(reader.getPosition(), ie);
         } finally {
             if (closeAfterParse) {
                 try {
                     reader.close();
                 } catch (IOException ignore) {
+                    // close silently
                 }
             }
         }
@@ -195,7 +196,7 @@ public class JSONParser {
         if (reader instanceof JSONReaderImpl)
             ((JSONReaderImpl) reader).thr();
         else
-            throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_TOKEN, "\"" + JSONValue.escape(reader.getCurrentToken() + "") + "\"");
+            throw new ParseException(reader.getPosition(), JSONValue.escape(reader.getCurrentToken() + ""));
 
     }
 
