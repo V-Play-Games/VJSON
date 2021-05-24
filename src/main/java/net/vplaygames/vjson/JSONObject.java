@@ -15,7 +15,6 @@
  */
 package net.vplaygames.vjson;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -26,8 +25,8 @@ import java.util.function.Function;
  *
  * @author Vaibhav Nargwani
  */
-public class JSONObject extends JSONValue implements Map<String, JSONValue>, Cloneable, Serializable {
-    HashMap<String, JSONValue> map = new LinkedHashMap<>();
+public class JSONObject extends JSONValue implements Map<String, JSONValue>, Cloneable {
+    LinkedHashMap<String, JSONValue> map = new LinkedHashMap<>();
 
     public JSONObject() {
     }
@@ -38,7 +37,7 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
      * @param map the map to copy key-value pairs from
      */
     public JSONObject(Map<?, ?> map) {
-        map.forEach((k, v) -> put(String.valueOf(k), new JSONValue(v)));
+        map.forEach((k, v) -> put(String.valueOf(k), JSONValue.of(v)));
     }
 
     /**
@@ -53,13 +52,9 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
         return map.entrySet()
             .stream()
             .collect(() -> new StringJoiner(",", "{", "}"),
-                (joiner, e) -> joiner.add(toString(String.valueOf(e.getKey()), new JSONValue(e.getValue()).toString())),
+                (joiner, e) -> joiner.add("\"" + JSONValue.escape(String.valueOf(e.getKey())) + "\":" + JSONValue.toString(e.getValue())),
                 StringJoiner::merge)
             .toString();
-    }
-
-    public static String toString(String key, Object value) {
-        return "\"" + (key == null ? "null" : JSONValue.escape(key)) + "\":" + new JSONValue(value).toString();
     }
 
     @Override
@@ -89,43 +84,8 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
     }
 
     @Override
-    public byte asByte() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public short asShort() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public int asInt() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public long asLong() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public float asFloat() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public double asDouble() {
-        throw new ClassCastException();
-    }
-
-    @Override
     public String asString() {
         return toString();
-    }
-
-    @Override
-    public String asEscapedString() {
-        return super.asEscapedString();
     }
 
     @Override

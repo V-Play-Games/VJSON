@@ -66,7 +66,7 @@ public class ParseException extends RuntimeException {
             case UNEXPECTED_TOKEN:
                 return "Unexpected token " + unexpectedObject + " at position " + position + ".";
             case UNEXPECTED_EXCEPTION:
-                return "Unexpected exception at position " + position + ": " + JSONValue.escape(String.valueOf(unexpectedObject));
+                return "Unexpected exception at position " + position + ": " + JSONValue.escape(unexpectedObject + "");
             default:
                 return "Unknown error at position " + position + ".";
         }

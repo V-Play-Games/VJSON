@@ -22,16 +22,14 @@ import java.io.Reader;
 
 import static net.vplaygames.vjson.parser.TokenType.*;
 
-public class HeapBasedJSONReader implements JSONReader {
-    /** denotes the end of file */
-    static final int EoF = -1;
+public class HeapBasedJSONReader extends JSONReaderImpl {
     /** lexical state that denotes that the lexer is not parsing a string currently */
     static final int INITIAL = 0;
     /** lexical state that denotes that the lexer is parsing a string currently */
     static final int IN_STRING = 1;
 
     /** Translates characters to character classes */
-    private static final char[] C_MAP;
+    private static final int[] C_MAP;
     /** ATTRIBUTE[state] contains the attributes of state {@code state} */
     private static final int[] ATTRIBUTE;
     /** Translates DFA states to action switch labels. */
@@ -40,33 +38,17 @@ public class HeapBasedJSONReader implements JSONReader {
     private static final int[] ROW_MAP;
 
     static {
-        String C_MAP_PACKED =
-            "\11\0\1\7\1\7\2\0\1\7\22\0\1\7\1\0\1\11\10\0" +
-                "\1\6\1\31\1\2\1\4\1\12\12\3\1\32\6\0\4\1\1\5" +
-                "\1\1\24\0\1\27\1\10\1\30\3\0\1\22\1\13\2\1\1\21" +
-                "\1\14\5\0\1\23\1\0\1\15\3\0\1\16\1\24\1\17\1\20" +
-                "\5\0\1\25\1\0\1\26\uff82\0";
-        C_MAP = new char[0x10000];
-        int i = 0; // index in packed string
-        int j = 0; // index in unpacked array
-        while (i < C_MAP_PACKED.length()) {
-            int count = C_MAP_PACKED.charAt(i++);
-            char value = C_MAP_PACKED.charAt(i++);
-            do C_MAP[j++] = value; while (--count > 0);
-        }
-        String ACTION_PACKED =
-            "\2\0\2\1\1\2\1\3\1\4\3\1\1\5\1\6" +
-                "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\5\0" +
-                "\1\14\1\16\1\17\1\20\1\21\1\22\1\23\1\24" +
-                "\1\0\1\25\1\0\1\25\4\0\1\26\1\27\2\0" +
-                "\1\30";
-        ACTION = new int[45];
-        i = j = 0;
-        while (i < ACTION_PACKED.length()) {
-            int count = ACTION_PACKED.charAt(i++);
-            int value = ACTION_PACKED.charAt(i++);
-            do ACTION[j++] = value; while (--count > 0);
-        }
+        unpack("\11\0\1\7\1\7\2\0\1\7\22\0\1\7\1\0\1\11\10\0" +
+            "\1\6\1\31\1\2\1\4\1\12\12\3\1\32\6\0\4\1\1\5" +
+            "\1\1\24\0\1\27\1\10\1\30\3\0\1\22\1\13\2\1\1\21" +
+            "\1\14\5\0\1\23\1\0\1\15\3\0\1\16\1\24\1\17\1\20" +
+            "\5\0\1\25\1\0\1\26\uff82\0", C_MAP = new int[0x10000]);
+        unpack("\2\0\2\1\1\2\1\3\1\4\3\1\1\5\1\6" +
+            "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\5\0" +
+            "\1\14\1\16\1\17\1\20\1\21\1\22\1\23\1\24" +
+            "\1\0\1\25\1\0\1\25\4\0\1\26\1\27\2\0" +
+            "\1\30", ACTION = new int[45]);
+        unpack("\2\0\1\11\3\1\1\11\3\1\6\11\2\1\1\11\5\0\10\11\1\0\1\1\1\0\1\1\4\0\2\11\2\0\1\11", ATTRIBUTE = new int[45]);
         String ROW_MAP_PACKED =
             "\0\0\0\33\0\66\0\121\0\154\0\207\0\66\0\242" +
                 "\0\275\0\330\0\66\0\66\0\66\0\66\0\66\0\66" +
@@ -75,21 +57,20 @@ public class HeapBasedJSONReader implements JSONReader {
                 "\0\u01b0\0\u01cb\0\u01e6\0\u01e6\0\u0201\0\u021c\0\u0237\0\u0252" +
                 "\0\66\0\66\0\u026d\0\u0288\0\66";
         ROW_MAP = new int[45];
-        i = j = 0;
+        int i = 0;
+        int j = 0;
         while (i < ROW_MAP_PACKED.length()) {
-            int high = ROW_MAP_PACKED.charAt(i++) << 16;
-            ROW_MAP[j++] = high | ROW_MAP_PACKED.charAt(i++);
+            ROW_MAP[j++] = (ROW_MAP_PACKED.charAt(i++) << 16) | ROW_MAP_PACKED.charAt(i++);
         }
-        String ATTRIBUTE_PACKED =
-            "\2\0\1\11\3\1\1\11\3\1\6\11\2\1\1\11" +
-                "\5\0\10\11\1\0\1\1\1\0\1\1\4\0\2\11" +
-                "\2\0\1\11";
-        ATTRIBUTE = new int[45];
-        i = j = 0;
-        while (i < ATTRIBUTE_PACKED.length()) {
-            int count = ATTRIBUTE_PACKED.charAt(i++);
-            int value = ATTRIBUTE_PACKED.charAt(i++);
-            do ATTRIBUTE[j++] = value; while (--count > 0);
+    }
+
+    private static void unpack(String packed, int[] unpacked) {
+        int i = 0; // index in packed string
+        int j = 0; // index in unpacked array
+        while (i < packed.length()) {
+            int count = packed.charAt(i++);
+            int value = packed.charAt(i++);
+            do unpacked[j++] = value; while (--count > 0);
         }
     }
 
@@ -169,26 +150,10 @@ public class HeapBasedJSONReader implements JSONReader {
     private Reader reader;
     /** the current lexical state */
     private int lexicalState = INITIAL;
-    /** this buffer contains the current text to be matched and is the source of the {@link #getString()} method */
-    private char[] buffer;
     /** the text position at the last accepting state */
     private int markedPos;
-    /** the current text position in the buffer */
-    private int currentPos;
     /** startRead marks the beginning of the getString() string in the buffer */
     private int startRead;
-    /** endRead marks the last character in the buffer, that has been read from input */
-    private int endRead;
-    /** the number of characters up to the start of the matched text */
-    private int position;
-    private Object currentToken;
-    private int currentTokenType;
-    /** if true, denotes that the lexer is at EoF or End of File */
-    private boolean atEoF;
-    /** the {@link StringBuilder} used in constructing Strings */
-    private StringBuilder sb = new StringBuilder();
-    private boolean closeUnderlyingResource;
-    private boolean isStringBased;
 
     /**
      * Creates a new scanner
@@ -200,59 +165,31 @@ public class HeapBasedJSONReader implements JSONReader {
     }
 
     public HeapBasedJSONReader(Reader in, boolean closeUnderlyingResource) {
-        this(in, new char[16384], closeUnderlyingResource, false);
+        super(new char[16384], closeUnderlyingResource, false, 0);
+        this.reader = in;
     }
 
     public HeapBasedJSONReader(String in) {
-        this(null, in.toCharArray(), false, true);
-    }
-
-    private HeapBasedJSONReader(Reader in, char[] buffer, boolean closeUnderlyingResource, boolean isStringBased) {
-        this.reader = in;
-        this.buffer = buffer;
-        this.closeUnderlyingResource = closeUnderlyingResource;
-        this.isStringBased = isStringBased;
-    }
-
-    @Override
-    public int getPosition() {
-        checkOpen();
-        return position;
-    }
-
-    @Override
-    public int getCurrentTokenType() {
-        checkOpen();
-        return currentTokenType;
-    }
-
-    @Override
-    public int getNextTokenType() throws IOException {
-        checkOpen();
-        return currentTokenType = getNextTokenType0();
-    }
-
-    @Override
-    public Object getCurrentToken() {
-        checkOpen();
-        return currentToken;
+        super(in.toCharArray(), false, true, 0);
     }
 
     @Override
     public void close() throws IOException {
-        if (sb == null) return;
-        sb = null;
+        if (builder == null) return;
+        builder = null;
         if (closeUnderlyingResource) reader.close();
         currentToken = null;
         reader = null;
         buffer = null;
-        lexicalState = currentPos = markedPos = startRead = endRead = position = currentTokenType = 0;
+        lexicalState = currentPosition = markedPos = startRead = lastPos = position = currentTokenType = 0;
         // TODO: Recycle the current buffer for future use
     }
 
-    /** Returns the text matched by the current regular expression. */
-    final String getString() {
-        return new String(buffer, startRead, markedPos - startRead);
+    /**
+     * Returns the text matched by the current regular expression.
+     */
+    final String getString(int offset) {
+        return new String(buffer, startRead + offset, markedPos - startRead);
     }
 
     /**
@@ -267,26 +204,26 @@ public class HeapBasedJSONReader implements JSONReader {
         if (startRead > 0) {
             System.arraycopy(buffer, startRead,
                 buffer, 0,
-                endRead - startRead);
+                lastPos - startRead);
             // translate stored positions
-            endRead -= startRead;
-            currentPos -= startRead;
+            lastPos -= startRead;
+            currentPosition -= startRead;
             markedPos -= startRead;
             startRead = 0;
         }
         // is the buffer big enough?
-        if (currentPos >= buffer.length) {
+        if (currentPosition >= buffer.length) {
             // if not, blow it up
             // TODO: Recycle the current buffer for future use
-            char[] newBuffer = new char[currentPos * 2];
+            char[] newBuffer = new char[currentPosition * 2];
             System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
             buffer = newBuffer;
         }
         // finally, fill the buffer with new input
-        int numRead = reader.read(buffer, endRead,
-            buffer.length - endRead);
+        int numRead = reader.read(buffer, lastPos,
+            buffer.length - lastPos);
         if (numRead > 0) {
-            endRead += numRead;
+            lastPos += numRead;
             return false;
         }
         // unlikely but not impossible: read 0 characters, but not at the end of stream
@@ -295,7 +232,7 @@ public class HeapBasedJSONReader implements JSONReader {
             if (c == -1) {
                 return true;
             } else {
-                buffer[endRead++] = (char) c;
+                buffer[lastPos++] = (char) c;
                 return false;
             }
         }
@@ -310,107 +247,93 @@ public class HeapBasedJSONReader implements JSONReader {
      * @return the next token
      * @throws IOException if any I/O-Error occurs
      */
-    private int getNextTokenType0() throws IOException, ParseException {
-        int input;
-        int action;
-
+    @Override
+    protected int getNextTokenType0() throws IOException, ParseException {
         while (true) {
-            action = -1;
             position += markedPos - startRead;
-            currentPos = startRead = markedPos;
+            currentPosition = startRead = markedPos;
             int state = lexicalState;
             while (true) {
-                if (currentPos < endRead)
-                    input = buffer[currentPos++];
-                else if (atEoF) {
-                    input = EoF;
-                    break;
-                } else {
-                    atEoF = buffer();
-                    continue;
+                if (currentPosition < lastPos) {
+                    state = TRANSITION_TABLE[ROW_MAP[state] + C_MAP[buffer[currentPosition++]]];
+                    if (state == -1) break;
+                    int attributes = ATTRIBUTE[state];
+                    if ((attributes & 1) == 1) {
+                        markedPos = currentPosition;
+                        if ((attributes & 8) == 8) break;
+                    }
                 }
-                int next = TRANSITION_TABLE[ROW_MAP[state] + C_MAP[input]];
-                if (next == -1) break;
-                state = next;
-                int attributes = ATTRIBUTE[state];
-                if ((attributes & 1) == 1) {
-                    action = state;
-                    markedPos = currentPos;
-                    if ((attributes & 8) == 8) break;
-                }
+                if (buffer())
+                    return EOF;
             }
-            if (action < 0 && input == EoF && startRead == this.currentPos) {
-                return EOF;
-            }
-            switch (ACTION[action]) {
+            switch (ACTION[state]) {
                 case 1:
                     throw new ParseException(position, ParseException.UNEXPECTED_CHAR, buffer[startRead]);
                 case 2:
-                    currentToken = Long.parseLong(getString());
+                    currentToken = Long.parseLong(getString(0));
                     return NUMBER;
                 case 4:
-                    sb.delete(0, sb.length());
+                    builder.delete(0, builder.length());
                     lexicalState = IN_STRING;
                     break;
                 case 5:
-                    return LEFT_BRACE;
+                    return OBJECT_START;
                 case 6:
-                    return RIGHT_BRACE;
+                    return OBJECT_END;
                 case 7:
-                    return LEFT_SQUARE;
+                    return ARRAY_START;
                 case 8:
-                    return RIGHT_SQUARE;
+                    return ARRAY_END;
                 case 9:
                     return COMMA;
                 case 10:
                     return COLON;
                 case 12:
-                    sb.append('\\');
+                    builder.append('\\');
                     break;
                 case 13:
                     lexicalState = INITIAL;
-                    currentToken = sb.toString();
+                    currentToken = builder.toString();
                     return STRING;
                 case 14:
-                    sb.append('"');
+                    builder.append('"');
                     break;
                 case 15:
-                    sb.append('/');
+                    builder.append('/');
                     break;
                 case 16:
-                    sb.append('\b');
+                    builder.append('\b');
                     break;
                 case 17:
-                    sb.append('\f');
+                    builder.append('\f');
                     break;
                 case 18:
-                    sb.append('\n');
+                    builder.append('\n');
                     break;
                 case 19:
-                    sb.append('\r');
+                    builder.append('\r');
                     break;
                 case 20:
-                    sb.append('\t');
+                    builder.append('\t');
                     break;
                 case 21:
-                    currentToken = Double.parseDouble(getString());
+                    currentToken = Double.parseDouble(getString(0));
                     return NUMBER;
                 case 22:
                     currentToken = null;
-                    return PRIMITIVE;
+                    return NULL;
                 case 23:
-                    currentToken = getString().equalsIgnoreCase("true");
-                    return PRIMITIVE;
+                    currentToken = getString(0).equalsIgnoreCase("true");
+                    return (boolean) currentToken ? TRUE : FALSE;
                 case 24:
                     try {
-                        int ch = Integer.parseInt(getString().substring(2), 16);
-                        sb.append((char) ch);
+                        builder.append((char) Integer.parseInt(getString(2), 16));
                     } catch (Exception e) {
                         throw new ParseException(position, ParseException.UNEXPECTED_EXCEPTION, e);
                     }
                     break;
                 case 11:
-                    sb.append(getString());
+                    builder.append(getString(0));
                     break;
                 case 3:
                 case 25:
@@ -439,12 +362,12 @@ public class HeapBasedJSONReader implements JSONReader {
                 case 48:
                     break;
                 default:
-                    throw new Error("Error: could not match input");
+                    thr();
             }
         }
     }
 
-    private void checkOpen() {
-        if (sb == null) throw new IllegalStateException("This JSONReader has already been closed!");
+    protected void checkOpen() {
+        if (builder == null) throw new IllegalStateException("This JSONReader has already been closed!");
     }
 }
