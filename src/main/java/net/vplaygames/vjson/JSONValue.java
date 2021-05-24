@@ -111,7 +111,7 @@ public class JSONValue implements JSONable {
                     c == '\n' ? "\\n" :
                         c == '\r' ? "\\r" :
                             c == '\t' ? "\\t" :
-                                c == '/' ? "\\/" : c+"";
+                                c == '/' ? "\\/" : Character.toString(c);
     }
 
     public static String unescape(String s) {

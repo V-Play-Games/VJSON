@@ -64,6 +64,24 @@ public class JSONObject extends JSONValue implements Map<String, JSONValue>, Clo
     }
 
     @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected JSONObject clone() {
+        try {
+            JSONObject clone = (JSONObject) super.clone();
+            clone.map = (LinkedHashMap<String, JSONValue>) map.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen, since the class is Cloneable
+            throw new InternalError();
+        }
+    }
+
+    @Override
     public String toRawString() {
         return toString();
     }

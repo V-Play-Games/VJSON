@@ -16,6 +16,9 @@
 package net.vplaygames.vjson.parser;
 
 public class TokenType {
+    // privated the constructor to not allow instances
+    private TokenType() {}
+
     /** End of File */
     public static final int EOF = -1;
     /** Number */

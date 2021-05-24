@@ -25,8 +25,6 @@ public abstract class JSONReaderImpl implements JSONReader {
             isStringBased,
             -1,
             0,
-            0,
-            null,
             currentPosition);
     }
 
@@ -35,18 +33,14 @@ public abstract class JSONReaderImpl implements JSONReader {
                              boolean closeUnderlyingResource,
                              boolean isStringBased,
                              int currentTokenType,
-                             int lastPos,
                              int position,
-                             Object currentToken,
                              int currentPosition) {
         this.buffer = buffer;
         this.position = position;
-        this.currentToken = currentToken;
         this.currentTokenType = currentTokenType;
         this.builder = builder;
         this.closeUnderlyingResource = closeUnderlyingResource;
         this.isStringBased = isStringBased;
-        this.lastPos = lastPos;
         this.currentPosition = currentPosition;
     }
 

@@ -23,10 +23,10 @@ public class ParseException extends RuntimeException {
     public static final int UNEXPECTED_EXCEPTION = 2;
     private final int errorType;
     private final int position;
-    private final Object unexpectedObject;
+    private final transient Object unexpectedObject;
 
     public ParseException(int position, char c) {
-        super("Unexpected character (" + JSONValue.escape(c + "") + ") at position " + position);
+        super("Unexpected character (" + JSONValue.escape(c) + ") at position " + position);
         this.position = position;
         this.errorType = UNEXPECTED_CHAR;
         this.unexpectedObject = c;

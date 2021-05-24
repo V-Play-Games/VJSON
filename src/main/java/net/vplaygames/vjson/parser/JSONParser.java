@@ -36,6 +36,14 @@ import static net.vplaygames.vjson.parser.TokenType.*;
  * @author Vaibhav Nargwani
  */
 public class JSONParser {
+    /**
+     * The default Container Factory which creates new
+     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
+     *
+     * @see ContainerFactory#deafaultFactory()
+     */
+    static ContainerFactory defaultFactory = ContainerFactory.of(JSONObject::new, JSONArray::new);
+
     public JSONValue parse(String s) throws ParseException {
         return parse(s, null);
     }
@@ -91,7 +99,7 @@ public class JSONParser {
 
     public JSONValue parse(JSONReader reader, ContainerFactory containerFactory, boolean closeAfterParse) throws ParseException {
         try {
-            return parseValue(reader, containerFactory == null ? ContainerFactory.defaultInstance() : containerFactory);
+            return parseValue(reader, containerFactory == null ? defaultFactory : containerFactory);
         } catch (IOException ie) {
             throw new ParseException(reader.getPosition(), ie);
         } finally {

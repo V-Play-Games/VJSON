@@ -21,7 +21,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 public class JSONArray extends JSONValue implements List<JSONValue>, RandomAccess, Cloneable {
-    ArrayList<JSONValue> list = new ArrayList<>();
+    ArrayList<JSONValue> list;
 
     /**
      * Convert a list to a JSON String
@@ -41,6 +41,24 @@ public class JSONArray extends JSONValue implements List<JSONValue>, RandomAcces
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object obj) {
         return list.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return list.hashCode();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected JSONArray clone() {
+        try {
+            JSONArray clone = (JSONArray) super.clone();
+            clone.list = (ArrayList<JSONValue>) list.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen, since the class is Cloneable
+            throw new InternalError();
+        }
     }
 
     @Override

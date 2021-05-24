@@ -29,14 +29,6 @@ import java.util.function.Supplier;
  */
 public interface ContainerFactory {
     /**
-     * The default Container Factory which creates new
-     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
-     *
-     * @see #defaultInstance()
-     */
-    ContainerFactory defaultFactory = of(JSONObject::new, JSONArray::new);
-
-    /**
      * Creates a new {@link JSONObject JSON Object container}
      *
      * @return a new {@link JSONObject JSON Object container}
@@ -79,7 +71,7 @@ public interface ContainerFactory {
      *
      * @return the default Container Factory
      */
-    static ContainerFactory defaultInstance() {
-        return defaultFactory;
+    static ContainerFactory deafaultFactory() {
+        return JSONParser.defaultFactory;
     }
 }
