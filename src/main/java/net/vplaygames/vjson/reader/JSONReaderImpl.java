@@ -88,7 +88,7 @@ public abstract class JSONReaderImpl implements JSONReader {
     }
 
     public void thr() {
-        throw new ParseException(position, ParseException.UNEXPECTED_CHAR, buffer[currentPosition]);
+        throw new ParseException(position, buffer[currentPosition]);
     }
 
     protected abstract int getNextTokenType0() throws IOException, ParseException;
