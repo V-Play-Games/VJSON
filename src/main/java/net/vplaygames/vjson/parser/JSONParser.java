@@ -19,6 +19,7 @@ import net.vplaygames.vjson.JSONArray;
 import net.vplaygames.vjson.JSONObject;
 import net.vplaygames.vjson.JSONValue;
 import net.vplaygames.vjson.reader.JSONReader;
+import net.vplaygames.vjson.reader.JSONReaderImpl;
 import net.vplaygames.vjson.reader.TokenBasedJSONReader;
 
 import java.io.*;
@@ -26,26 +27,21 @@ import java.io.*;
 import static net.vplaygames.vjson.parser.TokenType.*;
 
 /**
- * Parser for JSON getString. Please note that JSONParser is NOT thread-safe.
+ * A parser which parses JSON String using a raw {@code String}, a {@linkplain File},
+ * an {@linkplain InputStream}, a {@linkplain Reader}, or a pre-configured {@linkplain JSONReader}.
+ * This parser reads tokens through a {@link JSONReader}, which may be passed as a method parameter or
+ * constructed from a given {@code String}, {@linkplain File}, {@linkplain InputStream} or {@linkplain Reader}.
+ * All {@code parse} methods have an overriden method
  *
  * @author Vaibhav Nargwani
  */
 public class JSONParser {
-    public static final int IN_ERROR = -1;
-    public static final int INIT = 0;
-    public static final int IN_FINISHED_VALUE = 1;
-    public static final int IN_OBJECT = 2;
-    public static final int IN_ARRAY = 3;
-    public static final int PASSED_PAIR_KEY = 4;
-    public static final int EXPECT_COMMA = 5;
-    public static final int EXPECT_COLON = 6;
-
     public JSONValue parse(String s) throws ParseException {
         return parse(s, null);
     }
 
     public JSONValue parse(String s, ContainerFactory containerFactory) throws ParseException {
-        return parse(new TokenBasedJSONReader(s), containerFactory);
+        return parse(new TokenBasedJSONReader(s), containerFactory, true);
     }
 
     public JSONValue parse(File f) throws ParseException, FileNotFoundException {
@@ -55,7 +51,7 @@ public class JSONParser {
     public JSONValue parse(File f, ContainerFactory containerFactory) throws ParseException, FileNotFoundException {
         Reader reader = new FileReader(f);
         try {
-            return parse(new TokenBasedJSONReader(reader, true), containerFactory);
+            return parse(new TokenBasedJSONReader(reader, true), containerFactory, true);
         } catch (IOException ie) {
             throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
         }
@@ -67,7 +63,7 @@ public class JSONParser {
 
     public JSONValue parse(InputStream s, ContainerFactory containerFactory) throws ParseException {
         try {
-            return parse(new TokenBasedJSONReader(s), containerFactory);
+            return parse(new TokenBasedJSONReader(s), containerFactory, true);
         } catch (IOException ie) {
             throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
         }
@@ -77,17 +73,9 @@ public class JSONParser {
         return parse(in, null);
     }
 
-    /**
-     * Parse JSON String java object from the input source.
-     *
-     * @param in               t
-     * @param containerFactory the factory to create JSON object and JSON array containers
-     * @return a {@link JSONValue}
-     * @throws ParseException T
-     */
     public JSONValue parse(Reader in, ContainerFactory containerFactory) throws ParseException {
         try {
-            return parse(new TokenBasedJSONReader(in), containerFactory);
+            return parse(new TokenBasedJSONReader(in), containerFactory, true);
         } catch (IOException ie) {
             throw new ParseException(-1, ParseException.UNEXPECTED_EXCEPTION, ie);
         }
@@ -98,144 +86,126 @@ public class JSONParser {
     }
 
     public JSONValue parse(JSONReader reader, ContainerFactory containerFactory) throws ParseException {
-        try {
-            return parse0(reader, containerFactory == null ? ContainerFactory.defaultInstance() : containerFactory);
-        } catch (IOException ie) {
-            throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_EXCEPTION, ie);
-        }
+        return parse(reader, containerFactory, false);
     }
 
-    private JSONValue parse0(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
-        FIFOList<Object> statusStack = new FIFOList<>();
-        statusStack.add(INIT);
-        FIFOList<Object> valueStack = new FIFOList<>();
-        while (true) {
-            int token = reader.getNextTokenType();
-            switch ((int) statusStack.get()) {
-                case INIT:
-                    switch (token) {
-                        case STRING:
-                        case PRIMITIVE:
-                        case NUMBER:
-                            statusStack.replace(IN_FINISHED_VALUE);
-                            valueStack.add(reader.getCurrentToken());
-                            break;
-                        case LEFT_BRACE:
-                            statusStack.replace(IN_OBJECT);
-                            valueStack.add(createObject(containerFactory));
-                            break;
-                        case LEFT_SQUARE:
-                            statusStack.replace(IN_ARRAY);
-                            valueStack.add(createArray(containerFactory));
-                            break;
-                        default:
-                            statusStack.replace(IN_ERROR);
-                    }
-                    break;
-                case IN_FINISHED_VALUE:
-                    if (token == EOF)
-                        return ((JSONValue) valueStack.remove());
-                    else
-                        statusStack.replace(IN_ERROR);
-                case IN_OBJECT:
-                    switch (token) {
-                        case COMMA:
-                            break;
-                        case STRING:
-                            statusStack.add(PASSED_PAIR_KEY);
-                            valueStack.add(reader.getCurrentToken());
-                            break;
-                        case RIGHT_BRACE:
-                            if (valueStack.size() > 1) {
-                                statusStack.remove();
-                                valueStack.remove();
-                            } else
-                                statusStack.replace(IN_FINISHED_VALUE);
-                            break;
-                        default:
-                            statusStack.replace(IN_ERROR);
-                    }
-                    break;
-
-                case PASSED_PAIR_KEY:
-                    switch (token) {
-                        case COLON:
-                            break;
-                        case STRING:
-                        case PRIMITIVE:
-                        case NUMBER:
-                            statusStack.remove();
-                            String key = (String) valueStack.remove();
-                            ((JSONValue) valueStack.get()).asObject().put(key, JSONValue.of(reader.getCurrentToken()));
-                            break;
-                        case LEFT_SQUARE:
-                            statusStack.remove();
-                            JSONArray newArray = createArray(containerFactory);
-                            key = (String) valueStack.remove();
-                            ((JSONValue) valueStack.get()).asObject().put(key, newArray);
-                            statusStack.add(IN_ARRAY);
-                            valueStack.add(newArray);
-                            break;
-                        case LEFT_BRACE:
-                            statusStack.remove();
-                            JSONObject newObject = createObject(containerFactory);
-                            key = (String) valueStack.remove();
-                            ((JSONValue) valueStack.get()).asObject().put(key, newObject);
-                            statusStack.add(IN_OBJECT);
-                            valueStack.add(newObject);
-                            break;
-                        default:
-                            statusStack.add(IN_ERROR);
-                    }
-                    break;
-
-                case IN_ARRAY:
-                    switch (token) {
-                        case COMMA:
-                            break;
-                        case STRING:
-                        case PRIMITIVE:
-                        case NUMBER:
-                            ((JSONValue) valueStack.get()).asArray().add(JSONValue.of(reader.getCurrentToken()));
-                            break;
-                        case RIGHT_SQUARE:
-                            if (valueStack.size() > 1) {
-                                statusStack.remove();
-                                valueStack.remove();
-                            } else
-                                statusStack.replace(IN_FINISHED_VALUE);
-                            break;
-                        case LEFT_BRACE:
-                            JSONObject newObject = createObject(containerFactory);
-                            ((JSONValue) valueStack.get()).asArray().add(newObject);
-                            statusStack.add(IN_OBJECT);
-                            valueStack.add(newObject);
-                            break;
-                        case LEFT_SQUARE:
-                            JSONArray newArray = createArray(containerFactory);
-                            ((JSONValue) valueStack.get()).asArray().add(newArray);
-                            statusStack.add(IN_ARRAY);
-                            valueStack.add(newArray);
-                            break;
-                        default:
-                            statusStack.add(IN_ERROR);
-                    }
-                    break;
-                default:
-                    throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_TOKEN, token);
+    public JSONValue parse(JSONReader reader, ContainerFactory containerFactory, boolean closeAfterParse) throws ParseException {
+        try {
+            return parseValue(reader, containerFactory == null ? ContainerFactory.defaultInstance() : containerFactory);
+        } catch (IOException ie) {
+            throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_EXCEPTION, ie);
+        } finally {
+            if (closeAfterParse) {
+                try {
+                    reader.close();
+                } catch (IOException ignore) {
+                }
             }
         }
     }
 
+    private JSONValue parseValue(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
+        switch (reader.getNextTokenType()) {
+            case STRING:
+            case TRUE:
+            case FALSE:
+            case NULL:
+            case NUMBER:
+                return JSONValue.of(reader.getCurrentToken());
+            case OBJECT_START:
+                return parseObject(reader, containerFactory);
+            case ARRAY_START:
+                return parseArray(reader, containerFactory);
+            default:
+                thr(reader);
+                return null;
+        }
+    }
+
+    private JSONObject parseObject(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
+        JSONObject object = createObject(containerFactory);
+        if (reader.getNextTokenType() == OBJECT_END) return object;
+        if (reader.getCurrentTokenType() != STRING) thr(reader);
+        while (true) {
+            reader.expectNextType(COLON);
+            String key = (String) reader.getCurrentToken();
+            switch (reader.getNextTokenType()) {
+                case ARRAY_START:
+                    object.put(key, parseArray(reader, containerFactory));
+                    break;
+                case OBJECT_START:
+                    object.put(key, parseObject(reader, containerFactory));
+                    break;
+                case STRING:
+                case TRUE:
+                case FALSE:
+                case NULL:
+                case NUMBER:
+                    object.put(key, JSONValue.of(reader.getCurrentToken()));
+                    break;
+                default:
+                    thr(reader);
+            }
+            switch (reader.getNextTokenType()) {
+                case COMMA:
+                    reader.expectNextType(STRING);
+                    continue;
+                case OBJECT_END:
+                    return object;
+                default:
+                    thr(reader);
+            }
+        }
+    }
+
+    private JSONArray parseArray(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
+        JSONArray array = createArray(containerFactory);
+        if (reader.getNextTokenType() == ARRAY_END) return array;
+        while (true) {
+            switch (reader.getCurrentTokenType()) {
+                case ARRAY_START:
+                    array.add(parseArray(reader, containerFactory));
+                    break;
+                case OBJECT_START:
+                    array.add(parseObject(reader, containerFactory));
+                    break;
+                case STRING:
+                case TRUE:
+                case FALSE:
+                case NULL:
+                case NUMBER:
+                    array.add(JSONValue.of(reader.getCurrentToken()));
+                    break;
+                default:
+                    thr(reader);
+            }
+            switch (reader.getNextTokenType()) {
+                case COMMA:
+                    reader.getNextTokenType();
+                    continue;
+                case ARRAY_END:
+                    return array;
+                default:
+                    thr(reader);
+            }
+        }
+    }
+
+    private static void thr(JSONReader reader) {
+        if (reader instanceof JSONReaderImpl)
+            ((JSONReaderImpl) reader).thr();
+        else
+            throw new ParseException(reader.getPosition(), ParseException.UNEXPECTED_TOKEN, "\"" + JSONValue.escape(reader.getCurrentToken() + "") + "\"");
+
+    }
+
     private static JSONObject createObject(ContainerFactory containerFactory) {
-        JSONObject jo = containerFactory.createObjectContainer();
-        if (jo == null) return new JSONObject();
-        return jo;
+        JSONObject jo = containerFactory.newObject();
+        return jo == null ? new JSONObject() : jo;
     }
 
     private static JSONArray createArray(ContainerFactory containerFactory) {
-        JSONArray ja = containerFactory.createArrayContainer();
-        if (ja == null) return new JSONArray();
-        return ja;
+        JSONArray ja = containerFactory.newArray();
+        return ja == null ? new JSONArray() : ja;
     }
 }

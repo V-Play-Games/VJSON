@@ -12,7 +12,8 @@
 
     <groupId>com.github.v-play-games</groupId>
     <artifactId>vjson</artifactId>
-    <version>1.0.0</version>
+    <version>0.0.1</version>
+    <inceptionYear>2021</inceptionYear>
 
     <build>
         <plugins>

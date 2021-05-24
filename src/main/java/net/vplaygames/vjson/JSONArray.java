@@ -19,9 +19,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
-public class JSONArray extends JSONValue implements List<JSONValue>, RandomAccess, Cloneable, java.io.Serializable {
+public class JSONArray extends JSONValue implements List<JSONValue>, RandomAccess, Cloneable {
     ArrayList<JSONValue> list = new ArrayList<>();
 
     /**
@@ -32,8 +31,8 @@ public class JSONArray extends JSONValue implements List<JSONValue>, RandomAcces
      */
     public static String toJSONString(List<?> list) {
         return list == null ? "null" :
-            list.stream().collect(() -> new StringJoiner(",", "[", "]").setEmptyValue("null"),
-                (joiner, value) -> joiner.add(new JSONValue(value).toString()),
+            list.stream().collect(() -> new StringJoiner(",", "[", "]"),
+                (joiner, value) -> joiner.add(JSONValue.toString(value)),
                 StringJoiner::merge)
                 .toString();
     }
@@ -61,36 +60,6 @@ public class JSONArray extends JSONValue implements List<JSONValue>, RandomAcces
 
     @Override
     public Number asNumber() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public byte asByte() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public short asShort() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public int asInt() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public long asLong() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public float asFloat() {
-        throw new ClassCastException();
-    }
-
-    @Override
-    public double asDouble() {
         throw new ClassCastException();
     }
 
@@ -258,15 +227,5 @@ public class JSONArray extends JSONValue implements List<JSONValue>, RandomAcces
     @Override
     public Spliterator<JSONValue> spliterator() {
         return list.spliterator();
-    }
-
-    @Override
-    public Stream<JSONValue> stream() {
-        return list.stream();
-    }
-
-    @Override
-    public Stream<JSONValue> parallelStream() {
-        return list.parallelStream();
     }
 }

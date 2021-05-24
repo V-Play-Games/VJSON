@@ -21,31 +21,64 @@ import net.vplaygames.vjson.JSONObject;
 import java.util.function.Supplier;
 
 /**
- * Container factory for creating containers for JSON object and JSON array.
+ * Container factory for creating {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays}
+ * to be used as containers for parsed JSON in the #parse methods of {@link JSONParser}
+ * with {@link #newObject()} and {@link #newArray()} methods respectively
  *
- * @see JSONParser#parse(java.io.Reader, ContainerFactory)
+ * @author Vaibhav Nargwani
  */
 public interface ContainerFactory {
+    /**
+     * The default Container Factory which creates new
+     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
+     *
+     * @see #defaultInstance()
+     */
     ContainerFactory defaultFactory = of(JSONObject::new, JSONArray::new);
 
-    JSONObject createObjectContainer();
+    /**
+     * Creates a new {@link JSONObject JSON Object container}
+     *
+     * @return a new {@link JSONObject JSON Object container}
+     */
+    JSONObject newObject();
 
-    JSONArray createArrayContainer();
+    /**
+     * Creates a new {@link JSONArray JSON Array container}
+     *
+     * @return a new {@link JSONArray JSON Array container}
+     */
+    JSONArray newArray();
 
+    /**
+     * Creates a new Container Factory which creates new
+     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays}
+     * from the {@link Supplier Suppliers} provided as parameters passed
+     *
+     * @param objectSupplier the {@linkplain Supplier} which supplies new {@link JSONObject JSONObjects}
+     * @param arraySupplier the {@linkplain Supplier} which supplies new {@link JSONArray JSONArrays}
+     * @return new Container Factory which creates new JSON Objects and JSON Arrays from the Suppliers provided
+     */
     static ContainerFactory of(Supplier<JSONObject> objectSupplier, Supplier<JSONArray> arraySupplier) {
         return new ContainerFactory() {
             @Override
-            public JSONObject createObjectContainer() {
+            public JSONObject newObject() {
                 return objectSupplier.get();
             }
 
             @Override
-            public JSONArray createArrayContainer() {
+            public JSONArray newArray() {
                 return arraySupplier.get();
             }
         };
     }
 
+    /**
+     * the default Container Factory which creates new
+     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
+     *
+     * @return the default Container Factory
+     */
     static ContainerFactory defaultInstance() {
         return defaultFactory;
     }

@@ -15,33 +15,62 @@
  */
 package net.vplaygames.vjson.parser;
 
-import java.util.ArrayList;
-
-public class FIFOList<T> {
-    ArrayList<T> elements = new ArrayList<>();
+/**
+ * A first-in-first-out list with limited functionality
+ *
+ * @author Vaibhav Nargwani
+ * @since 1.0.0
+ */
+public class FIFOList {
+    private static final Object[] PLACEHOLDER_ARRAY = {};
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    Object[] elementData = PLACEHOLDER_ARRAY;
     int lastPos;
 
-    public void add(T t) {
-        if (lastPos++ == elements.size())
-            elements.add(t);
-        else
-            elements.set(lastPos - 1, t);
+    /**
+     * Add the given element to the top of the list
+     *
+     * @param t the element to add
+     */
+    public void add(Object t) {
+        int minCapacity = elementData.length == 0 ? Math.max(10, lastPos + 1) : lastPos + 1;
+        if (minCapacity - elementData.length > 0) {
+            int newCapacity = elementData.length + (elementData.length >> 1);
+            newCapacity = newCapacity - minCapacity < 0 ? minCapacity : newCapacity;
+            newCapacity = newCapacity - MAX_ARRAY_SIZE <= 0 ? newCapacity : minCapacity > MAX_ARRAY_SIZE ? Integer.MAX_VALUE : MAX_ARRAY_SIZE;
+            elementData = java.util.Arrays.copyOf(elementData, newCapacity);
+        }
+        elementData[lastPos++] = t;
     }
 
-    public T remove() {
-        T t = replace(null);
-        lastPos--;
-        return t;
+    /**
+     *
+     */
+    public Object remove() {
+        Object o = get();
+        elementData[lastPos--] = null;
+        return o;
     }
 
-    public T replace(T t) {
-        return elements.set(lastPos - 1, t);
+    /**
+     *
+     */
+    public Object replace(Object o) {
+        Object old = get();
+        elementData[lastPos - 1] = o;
+        return old;
     }
 
-    public T get() {
-        return lastPos == 0 ? null : elements.get(lastPos - 1);
+    /**
+     *
+     */
+    public Object get() {
+        return lastPos == 0 ? null : elementData[lastPos - 1];
     }
 
+    /**
+     *
+     */
     public int size() {
         return lastPos;
     }

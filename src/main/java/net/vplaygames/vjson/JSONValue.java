@@ -17,7 +17,10 @@ package net.vplaygames.vjson;
 
 import net.vplaygames.vjson.parser.JSONParser;
 import net.vplaygames.vjson.parser.ParseException;
+import net.vplaygames.vjson.reader.JSONReader;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
@@ -34,48 +37,61 @@ public class JSONValue implements JSONable {
     public static final JSONValue TRUE = new JSONValue(true);
     public static final JSONValue FALSE = new JSONValue(false);
     public static final JSONValue NULL = new JSONValue(null);
-    final Object o;
-    Type type;
+    public static JSONParser parser;
+    private final Object o;
+    private Type type;
 
-    public JSONValue(Object o) {
+    private JSONValue(Object o) {
         this.o = o;
     }
 
-    JSONValue() {
+    protected JSONValue() {
         o = this;
     }
 
+    private static JSONParser getParser() {
+        return parser == null ? new JSONParser() : parser;
+    }
+
     /**
-     * Parse JSON String into Java object from the input source.
+     * Parse a JSON String from the {@link Reader}
      *
      * @param in the reader to read from
-     * @return An instance of following:
-     * {@link JSONObject},
-     * {@link JSONArray},
-     * {@link String},
-     * {@link Number},
-     * {@link Boolean},
-     * {null}
+     * @return a {@link JSONValue}
      * @throws ParseException t
      * @see JSONParser
      */
     public static JSONValue parse(Reader in) throws ParseException {
-        return new JSONParser().parse(in);
+        return getParser().parse(in);
     }
 
     public static JSONValue parse(InputStream in) throws ParseException {
-        return new JSONParser().parse(in);
+        return getParser().parse(in);
     }
 
     public static JSONValue parse(String s) throws ParseException {
-        return new JSONParser().parse(s);
+        return getParser().parse(s);
+    }
+
+    public static JSONValue parse(File f) throws ParseException, FileNotFoundException {
+        return getParser().parse(f);
+    }
+
+    public static JSONValue parse(JSONReader s) throws ParseException {
+        return getParser().parse(s);
     }
 
     public static JSONValue of(Object o) {
-        if (o instanceof JSONValue)
+        if (o == null)
+            return NULL;
+        else if (o instanceof JSONValue)
             return (JSONValue) o;
-        else
+        else if (!(o instanceof Boolean))
             return new JSONValue(o);
+        else if ((boolean) o)
+            return TRUE;
+        else
+            return FALSE;
     }
 
     /**
@@ -99,6 +115,10 @@ public class JSONValue implements JSONable {
             .replaceAll("\\\\t", "\t");
     }
 
+    public static String toString(Object o) {
+        return Type.of(o).toString(o);
+    }
+
     @Override
     public String toString() {
         return getType().toString(o);
@@ -106,9 +126,12 @@ public class JSONValue implements JSONable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof JSONValue)
-            return Objects.equals(((JSONValue) obj).o, o);
-        return super.equals(obj);
+        return obj instanceof JSONValue && Objects.equals(((JSONValue) obj).o, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return o != null ? o.hashCode() : 0;
     }
 
     @Override
@@ -165,7 +188,6 @@ public class JSONValue implements JSONable {
     }
 
     public JSONObject asObject() {
-        System.out.println(o.getClass());
         return (JSONObject) o;
     }
 
@@ -189,7 +211,7 @@ public class JSONValue implements JSONable {
         STRING(o -> o instanceof String, o -> "\"" + escape((String) o) + "\""),
         NUMBER(o -> o instanceof Number, String::valueOf),
         BOOLEAN(o -> o instanceof Boolean, String::valueOf),
-        JSON_AWARE(o -> o instanceof JSONable, o -> ((JSONable) o).toJSONString()),
+        JSONABLE(o -> o instanceof JSONable, o -> ((JSONable) o).toJSONString()),
         OBJECT(o -> o instanceof Map, o -> JSONObject.toJSONString((Map<?, ?>) o)),
         ARRAY(o -> o instanceof List, o -> JSONArray.toJSONString((List<?>) o)),
         UNKNOWN(o -> true, String::valueOf);
@@ -202,6 +224,7 @@ public class JSONValue implements JSONable {
             this.toString = toString;
         }
 
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
         public static Type of(Object o) {
             return Arrays.stream(values()).filter(t -> t.checker.test(o)).findFirst().get();
         }

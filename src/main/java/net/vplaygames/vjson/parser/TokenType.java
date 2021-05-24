@@ -22,18 +22,22 @@ public class TokenType {
     public static final int NUMBER = 0;
     /** String */
     public static final int STRING = 1;
-    /** String */
-    public static final int PRIMITIVE = 2;
+    /** true */
+    public static final int TRUE = 2;
+    /** false */
+    public static final int FALSE = 3;
+    /** null */
+    public static final int NULL = 4;
     /** Left Curly Brace ({) */
-    public static final int LEFT_BRACE = 3;
+    public static final int OBJECT_START = 5;
     /** Right Curly Brace (}) */
-    public static final int RIGHT_BRACE = 4;
+    public static final int OBJECT_END = 6;
     /** Left Square Brace ([) */
-    public static final int LEFT_SQUARE = 5;
+    public static final int ARRAY_START = 7;
     /** Right Square Brace (]) */
-    public static final int RIGHT_SQUARE = 6;
+    public static final int ARRAY_END = 8;
     /** Comma (,) */
-    public static final int COMMA = 7;
+    public static final int COMMA = 9;
     /** Colon (:) */
-    public static final int COLON = 8;
+    public static final int COLON = 10;
 }
