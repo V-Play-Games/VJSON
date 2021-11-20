@@ -71,7 +71,7 @@ public interface ContainerFactory {
      *
      * @return the default Container Factory
      */
-    static ContainerFactory deafaultFactory() {
+    static ContainerFactory defaultFactory() {
         return JSONParser.defaultFactory;
     }
 }

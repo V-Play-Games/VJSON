@@ -17,78 +17,124 @@ package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 
 import static net.vplaygames.vjson.parser.TokenType.*;
 
 public class TokenBasedJSONReader extends JSONReaderImpl {
+    private StringBuilder builder = new StringBuilder();
     private Reader reader;
+    private Object currentToken;
+    private int currentTokenType;
+    private int currentPosition = -1;
+    private int lastPos;
+    private char[] buffer;
+    private boolean closeUnderlyingResource;
+    private boolean isStringBased;
 
-    public TokenBasedJSONReader(InputStream in) throws IOException {
+    public TokenBasedJSONReader(File f) throws FileNotFoundException {
+        this(new FileReader(f));
+    }
+
+    public TokenBasedJSONReader(InputStream in) {
         this(in, false);
     }
 
-    public TokenBasedJSONReader(InputStream in, boolean closeUnderlyingResource) throws IOException {
+    public TokenBasedJSONReader(InputStream in, boolean closeUnderlyingResource) {
         this(new InputStreamReader(in), closeUnderlyingResource);
     }
 
-    public TokenBasedJSONReader(Reader in) throws IOException {
+    public TokenBasedJSONReader(Reader in) {
         this(in, false);
     }
 
-    public TokenBasedJSONReader(Reader in, boolean closeUnderlyingResource) throws IOException {
-        super(new char[1048576], closeUnderlyingResource, false, -1);
+    public TokenBasedJSONReader(Reader in, boolean closeUnderlyingResource) {
+        buffer = new char[1048576];
         reader = in;
+        this.closeUnderlyingResource = closeUnderlyingResource;
+        isStringBased = false;
         buffer();
     }
 
     public TokenBasedJSONReader(String s) {
-        super(s.toCharArray(), false, true, -1);
+        buffer = s.toCharArray();
+        isStringBased = true;
+        closeUnderlyingResource = false;
         lastPos = s.length();
     }
 
-    private boolean buffer() throws IOException {
-        // fill the buffer with new input
-        int numRead = reader.read(buffer, lastPos, buffer.length - lastPos);
-        if (numRead > 0) {
-            lastPos = numRead;
-            position += numRead;
-            return false;
-        }
-        // it is unlikely but not impossible that we read 0 characters, but not at the end of reader
-        if (numRead == 0) {
-            int c = reader.read();
-            if (c == -1) {
-                return true;
-            } else {
-                buffer[lastPos++] = (char) c;
-                position++;
+    private boolean buffer() {
+        try {
+            // fill the buffer with new input
+            int numRead = reader.read(buffer, lastPos, buffer.length - lastPos);
+            if (numRead > 0) {
+                lastPos = numRead;
                 return false;
             }
+            // it is unlikely but not impossible that we read 0 characters, but not at the end of reader
+            if (numRead == 0) {
+                int c = reader.read();
+                if (c == -1) {
+                    return true;
+                } else {
+                    buffer[lastPos++] = (char) c;
+                    return false;
+                }
+            }
+        } catch (IOException exc) {
+            throw new ParseException(currentPosition, exc);
         }
         // End of File
         return true;
     }
 
     private char nextChar() {
-        if (buffer.length - currentPosition == 1 && !isStringBased) {
-            try {
-                buffer[0] = buffer[buffer.length - 1];
-                currentPosition = -1;
-                lastPos = 1;
-                buffer();
-            } catch (IOException exc) {
-                throw new ParseException(currentPosition, exc);
-            }
+        if (isEOF()) {
+            thr();
         }
         return buffer[++currentPosition];
     }
 
-    protected int getNextTokenType0() throws IOException {
-        if (lastPos - currentPosition == 1 && (isStringBased || buffer())) return EOF;
+    @Override
+    public int getPosition() {
+        checkOpen();
+        return currentPosition;
+    }
+
+    @Override
+    public int getCurrentTokenType() {
+        checkOpen();
+        return currentTokenType;
+    }
+
+    @Override
+    public int getNextTokenType() {
+        checkOpen();
+        return currentTokenType = getNextTokenType0();
+    }
+
+    @Override
+    public Object getCurrentToken() {
+        checkOpen();
+        return currentToken;
+    }
+
+    private boolean isEOF() {
+        if (lastPos - currentPosition == 1) {
+            if (isStringBased) {
+                return true;
+            } else {
+                buffer[0] = buffer[lastPos - 1];
+                currentPosition = -1;
+                lastPos = 1;
+                return buffer();
+            }
+        }
+        return false;
+    }
+
+    protected int getNextTokenType0() {
+        if (isEOF()) return EOF;
         switch (nextChar()) {
             case '{':
                 return OBJECT_START;
@@ -106,11 +152,12 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                 currentToken = getString();
                 return STRING;
             case '-':
-                currentToken = -getNumber().doubleValue();
+                currentToken = getNumber(true);
                 return NUMBER;
             case '.':
-                builder.replace(0, builder.length(), "0");
-                currentToken = getDouble();
+                builder.delete(0, builder.length());
+                builder.append(0);
+                currentToken = getDouble(false);
                 return NUMBER;
             case '0':
             case '1':
@@ -122,21 +169,18 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
             case '7':
             case '8':
             case '9':
-                currentToken = getNumber();
+                currentToken = getNumber(false);
                 return NUMBER;
             case 't':
-                // check next characters
-                thr(nextChar() != 'r' || nextChar() != 'u' || nextChar() != 'e');
+                checkTrue();
                 currentToken = true;
                 return TRUE;
             case 'f':
-                // check next characters
-                thr(nextChar() != 'a' || nextChar() != 'l' || nextChar() != 's' || nextChar() != 'e');
+                checkFalse();
                 currentToken = false;
                 return FALSE;
             case 'n':
-                // check next characters
-                thr(nextChar() != 'u' || nextChar() != 'l' || nextChar() != 'l');
+                checkNull();
                 currentToken = null;
                 return NULL;
             case ' ':
@@ -154,9 +198,9 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
     private String getString() {
         builder.delete(0, builder.length());
         boolean backslashMode = false;
-        char c;
+        loop:
         while (true) {
-            c = nextChar();
+            char c = nextChar();
             if (backslashMode) {
                 switch (c) {
                     case '"':
@@ -202,14 +246,15 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                     break;
                 case '\\':
                     backslashMode = true;
-                    break;
+                    continue;
                 case '"':
-                    return builder.toString();
+                    break loop;
                 case '/':
                 default:
                     builder.append(c);
             }
         }
+        return builder.toString();
     }
 
     int nextHexChar() {
@@ -225,24 +270,40 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
         return -1;
     }
 
-    private double getDouble() {
+    private double getDouble(boolean negative) {
         char c = buffer[currentPosition];
         do {
             builder.append(c);
         } while (!((c = nextChar()) < '0' || c > '9') || c == '+' || c == '-' || c == 'e' || c == 'E');
         currentPosition--;
-        return Double.parseDouble(builder.toString());
+        return negative ? -Double.parseDouble(builder.toString()) : Double.parseDouble(builder.toString());
     }
 
-    private Number getNumber() {
+    private Number getNumber(boolean negative) {
         builder.delete(0, builder.length());
         char c = buffer[currentPosition];
         do {
             builder.append(c);
         } while (!((c = nextChar()) < '0' || c > '9'));
-        if (c == '.' || c == 'e' || c == 'E') return getDouble();
+        if (c == '.' || c == 'e' || c == 'E') return getDouble(negative);
         currentPosition--;
-        return Long.parseLong(builder.toString());
+        return negative ? -Long.parseLong(builder.toString()) : Long.parseLong(builder.toString());
+    }
+
+    private void checkTrue() {
+        thr(nextChar() != 'r' || nextChar() != 'u' || nextChar() != 'e');
+    }
+
+    private void checkFalse() {
+        thr(nextChar() != 'a' || nextChar() != 'l' || nextChar() != 's' || nextChar() != 'e');
+    }
+
+    private void checkNull() {
+        thr(nextChar() != 'u' || nextChar() != 'l' || nextChar() != 'l');
+    }
+
+    public void thr() {
+        throw new ParseException(currentPosition, buffer[currentPosition]);
     }
 
     @Override

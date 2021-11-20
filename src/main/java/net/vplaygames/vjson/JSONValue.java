@@ -19,10 +19,8 @@ import net.vplaygames.vjson.parser.JSONParser;
 import net.vplaygames.vjson.parser.ParseException;
 import net.vplaygames.vjson.reader.JSONReader;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -65,6 +63,10 @@ public class JSONValue implements JSONable {
         return getParser().parse(in);
     }
 
+    public static JSONValue parse(URL url) throws ParseException, IOException {
+        return getParser().parse(url);
+    }
+
     public static JSONValue parse(InputStream in) throws ParseException {
         return getParser().parse(in);
     }
@@ -79,6 +81,10 @@ public class JSONValue implements JSONable {
 
     public static JSONValue parse(JSONReader s) throws ParseException {
         return getParser().parse(s);
+    }
+
+    public static JSONValue parseFile(String path) throws ParseException, FileNotFoundException {
+        return parse(new File(path));
     }
 
     public static JSONValue of(Object o) {
@@ -218,12 +224,12 @@ public class JSONValue implements JSONable {
 
     public enum Type {
         NULL(o -> o == null || (o instanceof Number && !Double.isFinite(((Number) o).doubleValue())), o -> "null"),
-        STRING(o -> o instanceof String, o -> "\"" + escape((String) o) + "\""),
-        NUMBER(o -> o instanceof Number, String::valueOf),
-        BOOLEAN(o -> o instanceof Boolean, String::valueOf),
-        JSONABLE(o -> o instanceof JSONable, o -> ((JSONable) o).toJSONString()),
-        OBJECT(o -> o instanceof Map, o -> JSONObject.toJSONString((Map<?, ?>) o)),
-        ARRAY(o -> o instanceof List, o -> JSONArray.toJSONString((List<?>) o)),
+        STRING(String.class::isInstance, o -> "\"" + escape((String) o) + "\""),
+        NUMBER(Number.class::isInstance, String::valueOf),
+        BOOLEAN(Boolean.class::isInstance, String::valueOf),
+        JSONABLE(JSONable.class::isInstance, o -> ((JSONable) o).toJSONString()),
+        OBJECT(Map.class::isInstance, o -> JSONObject.toJSONString((Map<?, ?>) o)),
+        ARRAY(List.class::isInstance, o -> JSONArray.toJSONString((List<?>) o)),
         UNKNOWN(o -> true, String::valueOf);
 
         final Predicate<Object> checker;

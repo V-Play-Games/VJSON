@@ -2,53 +2,14 @@ package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
 
-import java.io.IOException;
-
 public abstract class JSONReaderImpl implements JSONReader {
-    protected char[] buffer;
-    protected int position;
     protected Object currentToken;
     protected int currentTokenType;
-    protected StringBuilder builder;
-    protected boolean closeUnderlyingResource;
-    protected boolean isStringBased;
-    protected int lastPos;
-    protected int currentPosition;
 
-    protected JSONReaderImpl(char[] buffer,
-                             boolean closeUnderlyingResource,
-                             boolean isStringBased,
-                             int currentPosition) {
-        this(buffer,
-            new StringBuilder(),
-            closeUnderlyingResource,
-            isStringBased,
-            -1,
-            0,
-            currentPosition);
-    }
-
-    protected JSONReaderImpl(char[] buffer,
-                             StringBuilder builder,
-                             boolean closeUnderlyingResource,
-                             boolean isStringBased,
-                             int currentTokenType,
-                             int position,
-                             int currentPosition) {
-        this.buffer = buffer;
-        this.position = position;
-        this.currentTokenType = currentTokenType;
-        this.builder = builder;
-        this.closeUnderlyingResource = closeUnderlyingResource;
-        this.isStringBased = isStringBased;
-        this.currentPosition = currentPosition;
-    }
+    protected JSONReaderImpl() {}
 
     @Override
-    public int getPosition() {
-        checkOpen();
-        return position;
-    }
+    public abstract int getPosition();
 
     @Override
     public int getCurrentTokenType() {
@@ -57,7 +18,7 @@ public abstract class JSONReaderImpl implements JSONReader {
     }
 
     @Override
-    public int getNextTokenType() throws IOException {
+    public int getNextTokenType() {
         checkOpen();
         return currentTokenType = getNextTokenType0();
     }
@@ -68,12 +29,12 @@ public abstract class JSONReaderImpl implements JSONReader {
         return currentToken;
     }
 
-    public Object getNextToken() throws IOException {
+    public Object getNextToken() {
         getNextTokenType();
         return getCurrentToken();
     }
 
-    public void expectNextType(int type) throws ParseException, IOException {
+    public void expectNextType(int type) throws ParseException {
         thr(getNextTokenType() != type);
     }
 
@@ -81,11 +42,9 @@ public abstract class JSONReaderImpl implements JSONReader {
         if (check) thr();
     }
 
-    public void thr() {
-        throw new ParseException(position, buffer[currentPosition]);
-    }
+    public abstract void thr();
 
-    protected abstract int getNextTokenType0() throws IOException, ParseException;
+    protected abstract int getNextTokenType0() throws ParseException;
 
     protected abstract void checkOpen();
 }

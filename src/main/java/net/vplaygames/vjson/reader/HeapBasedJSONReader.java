@@ -17,8 +17,7 @@ package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 
 import static net.vplaygames.vjson.parser.TokenType.*;
 
@@ -29,7 +28,7 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
     static final int IN_STRING = 1;
 
     /** Translates characters to character classes */
-    private static final int[] C_MAP;
+    private static final char[] C_MAP;
     /** ATTRIBUTE[state] contains the attributes of state {@code state} */
     private static final int[] ATTRIBUTE;
     /** Translates DFA states to action switch labels. */
@@ -38,17 +37,33 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
     private static final int[] ROW_MAP;
 
     static {
-        unpack("\11\0\1\7\1\7\2\0\1\7\22\0\1\7\1\0\1\11\10\0" +
-            "\1\6\1\31\1\2\1\4\1\12\12\3\1\32\6\0\4\1\1\5" +
-            "\1\1\24\0\1\27\1\10\1\30\3\0\1\22\1\13\2\1\1\21" +
-            "\1\14\5\0\1\23\1\0\1\15\3\0\1\16\1\24\1\17\1\20" +
-            "\5\0\1\25\1\0\1\26\uff82\0", C_MAP = new int[0x10000]);
-        unpack("\2\0\2\1\1\2\1\3\1\4\3\1\1\5\1\6" +
-            "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\5\0" +
-            "\1\14\1\16\1\17\1\20\1\21\1\22\1\23\1\24" +
-            "\1\0\1\25\1\0\1\25\4\0\1\26\1\27\2\0" +
-            "\1\30", ACTION = new int[45]);
-        unpack("\2\0\1\11\3\1\1\11\3\1\6\11\2\1\1\11\5\0\10\11\1\0\1\1\1\0\1\1\4\0\2\11\2\0\1\11", ATTRIBUTE = new int[45]);
+        String C_MAP_PACKED =
+            "\11\0\1\7\1\7\2\0\1\7\22\0\1\7\1\0\1\11\10\0" +
+                "\1\6\1\31\1\2\1\4\1\12\12\3\1\32\6\0\4\1\1\5" +
+                "\1\1\24\0\1\27\1\10\1\30\3\0\1\22\1\13\2\1\1\21" +
+                "\1\14\5\0\1\23\1\0\1\15\3\0\1\16\1\24\1\17\1\20" +
+                "\5\0\1\25\1\0\1\26\uff82\0";
+        C_MAP = new char[0x10000];
+        int i = 0; // index in packed string
+        int j = 0; // index in unpacked array
+        while (i < C_MAP_PACKED.length()) {
+            int count = C_MAP_PACKED.charAt(i++);
+            char value = C_MAP_PACKED.charAt(i++);
+            do C_MAP[j++] = value; while (--count > 0);
+        }
+        String ACTION_PACKED =
+            "\2\0\2\1\1\2\1\3\1\4\3\1\1\5\1\6" +
+                "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\5\0" +
+                "\1\14\1\16\1\17\1\20\1\21\1\22\1\23\1\24" +
+                "\1\0\1\25\1\0\1\25\4\0\1\26\1\27\2\0" +
+                "\1\30";
+        ACTION = new int[45];
+        i = j = 0;
+        while (i < ACTION_PACKED.length()) {
+            int count = ACTION_PACKED.charAt(i++);
+            int value = ACTION_PACKED.charAt(i++);
+            do ACTION[j++] = value; while (--count > 0);
+        }
         String ROW_MAP_PACKED =
             "\0\0\0\33\0\66\0\121\0\154\0\207\0\66\0\242" +
                 "\0\275\0\330\0\66\0\66\0\66\0\66\0\66\0\66" +
@@ -57,20 +72,20 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
                 "\0\u01b0\0\u01cb\0\u01e6\0\u01e6\0\u0201\0\u021c\0\u0237\0\u0252" +
                 "\0\66\0\66\0\u026d\0\u0288\0\66";
         ROW_MAP = new int[45];
-        int i = 0;
-        int j = 0;
+        i = j = 0;
         while (i < ROW_MAP_PACKED.length()) {
-            ROW_MAP[j++] = (ROW_MAP_PACKED.charAt(i++) << 16) | ROW_MAP_PACKED.charAt(i++);
+            int high = ROW_MAP_PACKED.charAt(i++) << 16;
+            ROW_MAP[j++] = high | ROW_MAP_PACKED.charAt(i++);
         }
-    }
-
-    private static void unpack(String packed, int[] unpacked) {
-        int i = 0; // index in packed string
-        int j = 0; // index in unpacked array
-        while (i < packed.length()) {
-            int count = packed.charAt(i++);
-            int value = packed.charAt(i++);
-            do unpacked[j++] = value; while (--count > 0);
+        String ATTRIBUTE_PACKED = "\2\0\1\11\3\1\1\11\3\1\6\11\2\1\1\11" +
+                "\5\0\10\11\1\0\1\1\1\0\1\1\4\0\2\11" +
+                "\2\0\1\11";
+        ATTRIBUTE = new int[45];
+        i = j = 0;
+        while (i < ATTRIBUTE_PACKED.length()) {
+            int count = ATTRIBUTE_PACKED.charAt(i++);
+            int value = ATTRIBUTE_PACKED.charAt(i++);
+            do ATTRIBUTE[j++] = value; while (--count > 0);
         }
     }
 
@@ -150,45 +165,104 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
     private Reader reader;
     /** the current lexical state */
     private int lexicalState = INITIAL;
+    /** this buffer contains the current text to be matched and is the source of the {@link #getString(int)} method */
+    private char[] buffer;
     /** the text position at the last accepting state */
     private int markedPos;
+    /** the current text position in the buffer */
+    private int currentPos;
     /** startRead marks the beginning of the getString() string in the buffer */
     private int startRead;
+    /** endRead marks the last character in the buffer, that has been read from input */
+    private int endRead;
+    /** the number of characters up to the start of the matched text */
+    private int position;
+    private Object currentToken;
+    private int currentTokenType;
+    /** the {@link StringBuilder} used in constructing Strings */
+    private StringBuilder sb = new StringBuilder();
+    private boolean closeUnderlyingResource;
+    private boolean isStringBased;
 
     /**
      * Creates a new scanner
      *
-     * @param in the Reader to read input from
+     * @param f the File to read input from
      */
+    public HeapBasedJSONReader(File f) throws FileNotFoundException {
+        this(new FileReader(f));
+    }
+
+    public HeapBasedJSONReader(InputStream in) {
+        this(in, false);
+    }
+
+    public HeapBasedJSONReader(InputStream in, boolean closeUnderlyingResource) {
+        this(new InputStreamReader(in), closeUnderlyingResource);
+    }
+
     public HeapBasedJSONReader(Reader in) {
         this(in, true);
     }
 
     public HeapBasedJSONReader(Reader in, boolean closeUnderlyingResource) {
-        super(new char[16384], closeUnderlyingResource, false, 0);
-        this.reader = in;
+        this(in, new char[16384], closeUnderlyingResource, false);
     }
 
     public HeapBasedJSONReader(String in) {
-        super(in.toCharArray(), false, true, 0);
+        this(null, in.toCharArray(), false, true);
+    }
+
+    private HeapBasedJSONReader(Reader in, char[] buffer, boolean closeUnderlyingResource, boolean isStringBased) {
+        this.reader = in;
+        this.buffer = buffer;
+        this.closeUnderlyingResource = closeUnderlyingResource;
+        this.isStringBased = isStringBased;
+    }
+
+    @Override
+    public int getPosition() {
+        checkOpen();
+        return position;
+    }
+
+    @Override
+    public int getCurrentTokenType() {
+        checkOpen();
+        return currentTokenType;
+    }
+
+    @Override
+    public int getNextTokenType() {
+        checkOpen();
+        return currentTokenType = getNextTokenType0();
+    }
+
+    @Override
+    public Object getCurrentToken() {
+        checkOpen();
+        return currentToken;
+    }
+
+    @Override
+    public void thr() {
+        throw new ParseException(position, buffer[position]);
     }
 
     @Override
     public void close() throws IOException {
-        if (builder == null) return;
-        builder = null;
+        if (sb == null) return;
+        sb = null;
         if (closeUnderlyingResource) reader.close();
         currentToken = null;
         reader = null;
         buffer = null;
-        lexicalState = currentPosition = markedPos = startRead = lastPos = position = currentTokenType = 0;
+        lexicalState = currentPos = markedPos = startRead = endRead = position = currentTokenType = 0;
         // TODO: Recycle the current buffer for future use
     }
 
-    /**
-     * Returns the text matched by the current regular expression.
-     */
-    final String getString(int offset) {
+    /** Returns the text matched by the current regular expression. */
+    protected String getString(int offset) {
         return new String(buffer, startRead + offset, markedPos - startRead);
     }
 
@@ -196,45 +270,48 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
      * Refills the input buffer
      *
      * @return <code>false</code>, if there was new input
-     * @throws IOException if any I/O-Error occurs
      */
-    private boolean buffer() throws IOException {
+    protected boolean buffer() {
         if (isStringBased) return true;
         // then make room if possible
         if (startRead > 0) {
             System.arraycopy(buffer, startRead,
                 buffer, 0,
-                lastPos - startRead);
+                endRead - startRead);
             // translate stored positions
-            lastPos -= startRead;
-            currentPosition -= startRead;
+            endRead -= startRead;
+            currentPos -= startRead;
             markedPos -= startRead;
             startRead = 0;
         }
         // is the buffer big enough?
-        if (currentPosition >= buffer.length) {
+        if (currentPos >= buffer.length) {
             // if not, blow it up
             // TODO: Recycle the current buffer for future use
-            char[] newBuffer = new char[currentPosition * 2];
+            char[] newBuffer = new char[currentPos * 2];
             System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
             buffer = newBuffer;
         }
-        // finally, fill the buffer with new input
-        int numRead = reader.read(buffer, lastPos,
-            buffer.length - lastPos);
-        if (numRead > 0) {
-            lastPos += numRead;
-            return false;
-        }
-        // unlikely but not impossible: read 0 characters, but not at the end of stream
-        if (numRead == 0) {
-            int c = reader.read();
-            if (c == -1) {
-                return true;
-            } else {
-                buffer[lastPos++] = (char) c;
+        try {
+            // finally, fill the buffer with new input
+            int numRead = reader.read(buffer, endRead,
+                buffer.length - endRead);
+            if (numRead > 0) {
+                endRead += numRead;
                 return false;
             }
+            // unlikely but not impossible: read 0 characters, but not at the end of stream
+            if (numRead == 0) {
+                int c = reader.read();
+                if (c == -1) {
+                    return true;
+                } else {
+                    buffer[endRead++] = (char) c;
+                    return false;
+                }
+            }
+        } catch (IOException exc) {
+            throw new ParseException(position, exc);
         }
         // numRead < 0
         return true;
@@ -245,35 +322,34 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
      * the end of input is encountered, or any I/O-Error occurs
      *
      * @return the next token
-     * @throws IOException if any I/O-Error occurs
      */
-    @Override
-    protected int getNextTokenType0() throws IOException, ParseException {
+    protected int getNextTokenType0() throws ParseException {
         while (true) {
+            int action = -1;
             position += markedPos - startRead;
-            currentPosition = startRead = markedPos;
+            currentPos = startRead = markedPos;
             int state = lexicalState;
             while (true) {
-                if (currentPosition < lastPos) {
-                    state = TRANSITION_TABLE[ROW_MAP[state] + C_MAP[buffer[currentPosition++]]];
+                if (currentPos < endRead) {
+                    state = TRANSITION_TABLE[ROW_MAP[state] + C_MAP[buffer[currentPos++]]];
                     if (state == -1) break;
                     int attributes = ATTRIBUTE[state];
                     if ((attributes & 1) == 1) {
-                        markedPos = currentPosition;
+                        action = state;
+                        markedPos = currentPos;
                         if ((attributes & 8) == 8) break;
                     }
-                }
-                if (buffer())
+                } else if (buffer())
                     return EOF;
             }
-            switch (ACTION[state]) {
+            switch (ACTION[action]) {
                 case 1:
                     throw new ParseException(position, buffer[startRead]);
                 case 2:
                     currentToken = Long.parseLong(getString(0));
                     return NUMBER;
                 case 4:
-                    builder.delete(0, builder.length());
+                    sb.delete(0, sb.length());
                     lexicalState = IN_STRING;
                     break;
                 case 5:
@@ -289,32 +365,32 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
                 case 10:
                     return COLON;
                 case 12:
-                    builder.append('\\');
+                    sb.append('\\');
                     break;
                 case 13:
                     lexicalState = INITIAL;
-                    currentToken = builder.toString();
+                    currentToken = sb.toString();
                     return STRING;
                 case 14:
-                    builder.append('"');
+                    sb.append('"');
                     break;
                 case 15:
-                    builder.append('/');
+                    sb.append('/');
                     break;
                 case 16:
-                    builder.append('\b');
+                    sb.append('\b');
                     break;
                 case 17:
-                    builder.append('\f');
+                    sb.append('\f');
                     break;
                 case 18:
-                    builder.append('\n');
+                    sb.append('\n');
                     break;
                 case 19:
-                    builder.append('\r');
+                    sb.append('\r');
                     break;
                 case 20:
-                    builder.append('\t');
+                    sb.append('\t');
                     break;
                 case 21:
                     currentToken = Double.parseDouble(getString(0));
@@ -323,18 +399,16 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
                     currentToken = null;
                     return NULL;
                 case 23:
-                    currentToken = getString(0).equalsIgnoreCase("true");
-                    return (boolean) currentToken ? TRUE : FALSE;
+                    return (boolean) (currentToken = getString(0).equalsIgnoreCase("true")) ? TRUE : FALSE;
                 case 24:
                     try {
-                        builder.append((char) Integer.parseInt(getString(2), 16));
+                        sb.append((char) Integer.parseInt(getString(2), 16));
                     } catch (Exception e) {
                         throw new ParseException(position, e);
                     }
                     break;
                 case 11:
-                    builder.append(getString(0));
-                    break;
+                    sb.append(getString(0));
                 case 3:
                 case 25:
                 case 26:
@@ -362,12 +436,12 @@ public class HeapBasedJSONReader extends JSONReaderImpl {
                 case 48:
                     break;
                 default:
-                    thr();
+                    throw new Error("Error: could not match input");
             }
         }
     }
 
     protected void checkOpen() {
-        if (builder == null) throw new IllegalStateException("This JSONReader has already been closed!");
+        if (sb == null) throw new IllegalStateException("This JSONReader has already been closed!");
     }
 }

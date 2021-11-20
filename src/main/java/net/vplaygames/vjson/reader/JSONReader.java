@@ -27,9 +27,9 @@ public interface JSONReader extends Closeable {
 
     int getNextTokenType() throws IOException;
 
-    void expectNextType(int type) throws ParseException, IOException;
-
     Object getCurrentToken();
 
     Object getNextToken() throws IOException;
+
+    void expectNextType(int type) throws ParseException, IOException;
 }

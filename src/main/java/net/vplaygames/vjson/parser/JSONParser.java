@@ -23,6 +23,7 @@ import net.vplaygames.vjson.reader.JSONReaderImpl;
 import net.vplaygames.vjson.reader.TokenBasedJSONReader;
 
 import java.io.*;
+import java.net.URL;
 
 import static net.vplaygames.vjson.parser.TokenType.*;
 
@@ -40,9 +41,9 @@ public class JSONParser {
      * The default Container Factory which creates new
      * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
      *
-     * @see ContainerFactory#deafaultFactory()
+     * @see ContainerFactory#defaultFactory()
      */
-    static ContainerFactory defaultFactory = ContainerFactory.of(JSONObject::new, JSONArray::new);
+    static final ContainerFactory defaultFactory = ContainerFactory.of(JSONObject::new, JSONArray::new);
 
     public JSONValue parse(String s) throws ParseException {
         return parse(s, null);
@@ -57,11 +58,16 @@ public class JSONParser {
     }
 
     public JSONValue parse(File f, ContainerFactory containerFactory) throws ParseException, FileNotFoundException {
-        Reader reader = new FileReader(f);
-        try {
-            return parse(new TokenBasedJSONReader(reader, true), containerFactory, true);
-        } catch (IOException ie) {
-            throw new ParseException(-1, ie);
+        return parse(new TokenBasedJSONReader(f), containerFactory, true);
+    }
+
+    public JSONValue parse(URL url) throws ParseException, IOException {
+        return parse(url, null);
+    }
+
+    public JSONValue parse(URL url, ContainerFactory containerFactory) throws ParseException, IOException {
+        try (InputStream stream = url.openStream()) {
+            return parse(new TokenBasedJSONReader(stream), containerFactory, true);
         }
     }
 
@@ -70,11 +76,7 @@ public class JSONParser {
     }
 
     public JSONValue parse(InputStream s, ContainerFactory containerFactory) throws ParseException {
-        try {
-            return parse(new TokenBasedJSONReader(s), containerFactory, true);
-        } catch (IOException ie) {
-            throw new ParseException(-1, ie);
-        }
+        return parse(new TokenBasedJSONReader(s), containerFactory, true);
     }
 
     public JSONValue parse(Reader in) throws ParseException {
@@ -82,11 +84,7 @@ public class JSONParser {
     }
 
     public JSONValue parse(Reader in, ContainerFactory containerFactory) throws ParseException {
-        try {
-            return parse(new TokenBasedJSONReader(in), containerFactory, true);
-        } catch (IOException ie) {
-            throw new ParseException(-1, ie);
-        }
+        return parse(new TokenBasedJSONReader(in), containerFactory, true);
     }
 
     public JSONValue parse(JSONReader reader) throws ParseException {
@@ -133,11 +131,18 @@ public class JSONParser {
 
     private JSONObject parseObject(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
         JSONObject object = createObject(containerFactory);
-        if (reader.getNextTokenType() == OBJECT_END) return object;
-        if (reader.getCurrentTokenType() != STRING) thr(reader);
+        String key = null;
+        switch (reader.getNextTokenType()) {
+            case STRING:
+                key = (String) reader.getCurrentToken();
+                reader.expectNextType(COLON);
+                break;
+            case OBJECT_END:
+                return object;
+            default:
+                thr(reader);
+        }
         while (true) {
-            reader.expectNextType(COLON);
-            String key = (String) reader.getCurrentToken();
             switch (reader.getNextTokenType()) {
                 case ARRAY_START:
                     object.put(key, parseArray(reader, containerFactory));
@@ -158,6 +163,8 @@ public class JSONParser {
             switch (reader.getNextTokenType()) {
                 case COMMA:
                     reader.expectNextType(STRING);
+                    key = (String) reader.getCurrentToken();
+                    reader.expectNextType(COLON);
                     continue;
                 case OBJECT_END:
                     return object;

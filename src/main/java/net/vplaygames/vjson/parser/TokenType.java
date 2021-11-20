@@ -16,9 +16,11 @@
 package net.vplaygames.vjson.parser;
 
 public class TokenType {
-    // privated the constructor to not allow instances
-    private TokenType() {}
+    private TokenType() {
+        // the private constructor to not allow instances
+    }
 
+    //@formatter:off
     /** End of File */
     public static final int EOF = -1;
     /** Number */
@@ -43,4 +45,5 @@ public class TokenType {
     public static final int COMMA = 9;
     /** Colon (:) */
     public static final int COLON = 10;
+    //@formatter:on
 }
