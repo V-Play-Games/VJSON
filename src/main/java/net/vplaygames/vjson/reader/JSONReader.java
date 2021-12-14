@@ -16,6 +16,7 @@
 package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
+import net.vplaygames.vjson.parser.TokenType;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -23,13 +24,13 @@ import java.io.IOException;
 public interface JSONReader extends Closeable {
     int getPosition();
 
-    int getCurrentTokenType();
+    TokenType getCurrentTokenType();
 
-    int getNextTokenType() throws IOException;
+    TokenType getNextTokenType() throws IOException;
 
     Object getCurrentToken();
 
     Object getNextToken() throws IOException;
 
-    void expectNextType(int type) throws ParseException, IOException;
+    void expectNextType(TokenType type) throws ParseException, IOException;
 }

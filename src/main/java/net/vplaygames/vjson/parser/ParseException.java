@@ -15,39 +15,29 @@
  */
 package net.vplaygames.vjson.parser;
 
-import net.vplaygames.vjson.JSONValue;
-
 public class ParseException extends RuntimeException {
-    public static final int UNEXPECTED_CHAR = 0;
-    public static final int UNEXPECTED_TOKEN = 1;
-    public static final int UNEXPECTED_EXCEPTION = 2;
-    private final int errorType;
+    public static final int UNEXPECTED_TOKEN = 0;
+    public static final int UNEXPECTED_EXCEPTION = 1;
+    private final int type;
     private final int position;
-    private final transient Object unexpectedObject;
-
-    public ParseException(int position, char c) {
-        super("Unexpected character (" + JSONValue.escape(c) + ") at position " + position);
-        this.position = position;
-        this.errorType = UNEXPECTED_CHAR;
-        this.unexpectedObject = c;
-    }
+    private final String token;
 
     public ParseException(int position, String token) {
-        super("Unexpected token " + JSONValue.escape(token) + " at position " + position);
+        super("Unexpected token " + token + " at position " + position);
         this.position = position;
-        this.errorType = UNEXPECTED_TOKEN;
-        this.unexpectedObject = token;
+        this.type = UNEXPECTED_TOKEN;
+        this.token = token;
     }
 
     public ParseException(int position, Throwable cause) {
         super("Unexpected exception at position " + position, cause);
         this.position = position;
-        this.errorType = UNEXPECTED_EXCEPTION;
-        this.unexpectedObject = cause;
+        this.type = UNEXPECTED_EXCEPTION;
+        this.token = null;
     }
 
-    public int getErrorType() {
-        return errorType;
+    public int getType() {
+        return type;
     }
 
     /**
@@ -58,13 +48,9 @@ public class ParseException extends RuntimeException {
     }
 
     /**
-     * @return One of the following base on the value of errorType:
-     * ERROR_UNEXPECTED_CHAR      - {@link Character}
-     * ERROR_UNEXPECTED_TOKEN     - {@link TokenType}
-     * ERROR_UNEXPECTED_EXCEPTION - {@link Throwable}
-     * @see TokenType
+     * @return the unexpected token, or null if {@code type} is {@link #UNEXPECTED_EXCEPTION}
      */
-    public Object getUnexpectedObject() {
-        return unexpectedObject;
+    public Object getToken() {
+        return token;
     }
 }

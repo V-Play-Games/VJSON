@@ -15,8 +15,8 @@
  */
 package net.vplaygames.vjson.parser;
 
-import net.vplaygames.vjson.JSONArray;
-import net.vplaygames.vjson.JSONObject;
+import net.vplaygames.vjson.value.JSONArray;
+import net.vplaygames.vjson.value.JSONObject;
 
 import java.util.function.Supplier;
 
@@ -27,20 +27,12 @@ import java.util.function.Supplier;
  *
  * @author Vaibhav Nargwani
  */
-public interface ContainerFactory {
+public abstract class ContainerFactory {
     /**
-     * Creates a new {@link JSONObject JSON Object container}
-     *
-     * @return a new {@link JSONObject JSON Object container}
+     * The default Container Factory which creates new
+     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
      */
-    JSONObject newObject();
-
-    /**
-     * Creates a new {@link JSONArray JSON Array container}
-     *
-     * @return a new {@link JSONArray JSON Array container}
-     */
-    JSONArray newArray();
+    public static final ContainerFactory DEFAULT = ContainerFactory.of(JSONObject::new, JSONArray::new);
 
     /**
      * Creates a new Container Factory which creates new
@@ -48,10 +40,10 @@ public interface ContainerFactory {
      * from the {@link Supplier Suppliers} provided as parameters passed
      *
      * @param objectSupplier the {@linkplain Supplier} which supplies new {@link JSONObject JSONObjects}
-     * @param arraySupplier the {@linkplain Supplier} which supplies new {@link JSONArray JSONArrays}
+     * @param arraySupplier  the {@linkplain Supplier} which supplies new {@link JSONArray JSONArrays}
      * @return new Container Factory which creates new JSON Objects and JSON Arrays from the Suppliers provided
      */
-    static ContainerFactory of(Supplier<JSONObject> objectSupplier, Supplier<JSONArray> arraySupplier) {
+    public static ContainerFactory of(Supplier<JSONObject> objectSupplier, Supplier<JSONArray> arraySupplier) {
         return new ContainerFactory() {
             @Override
             public JSONObject newObject() {
@@ -66,12 +58,16 @@ public interface ContainerFactory {
     }
 
     /**
-     * the default Container Factory which creates new
-     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
+     * Creates a new {@link JSONObject JSON Object container}
      *
-     * @return the default Container Factory
+     * @return a new {@link JSONObject JSON Object container}
      */
-    static ContainerFactory defaultFactory() {
-        return JSONParser.defaultFactory;
-    }
+    public abstract JSONObject newObject();
+
+    /**
+     * Creates a new {@link JSONArray JSON Array container}
+     *
+     * @return a new {@link JSONArray JSON Array container}
+     */
+    public abstract JSONArray newArray();
 }

@@ -15,12 +15,12 @@
  */
 package net.vplaygames.vjson.parser;
 
-import net.vplaygames.vjson.JSONArray;
-import net.vplaygames.vjson.JSONObject;
-import net.vplaygames.vjson.JSONValue;
+import net.vplaygames.vjson.reader.AbstractJSONReader;
 import net.vplaygames.vjson.reader.JSONReader;
-import net.vplaygames.vjson.reader.JSONReaderImpl;
 import net.vplaygames.vjson.reader.TokenBasedJSONReader;
+import net.vplaygames.vjson.value.JSONArray;
+import net.vplaygames.vjson.value.JSONObject;
+import net.vplaygames.vjson.value.JSONValue;
 
 import java.io.*;
 import java.net.URL;
@@ -37,13 +37,23 @@ import static net.vplaygames.vjson.parser.TokenType.*;
  * @author Vaibhav Nargwani
  */
 public class JSONParser {
-    /**
-     * The default Container Factory which creates new
-     * {@link JSONObject JSONObjects} and {@link JSONArray JSONArrays} when asked for
-     *
-     * @see ContainerFactory#defaultFactory()
-     */
-    static final ContainerFactory defaultFactory = ContainerFactory.of(JSONObject::new, JSONArray::new);
+    private static void thr(JSONReader reader) {
+        if (reader instanceof AbstractJSONReader)
+            ((AbstractJSONReader) reader).thr();
+        else
+            throw new ParseException(reader.getPosition(), String.valueOf(reader.getCurrentToken()));
+
+    }
+
+    private static JSONObject createObject(ContainerFactory containerFactory) {
+        JSONObject jo = containerFactory.newObject();
+        return jo == null ? new JSONObject() : jo;
+    }
+
+    private static JSONArray createArray(ContainerFactory containerFactory) {
+        JSONArray ja = containerFactory.newArray();
+        return ja == null ? new JSONArray() : ja;
+    }
 
     public JSONValue parse(String s) throws ParseException {
         return parse(s, null);
@@ -97,7 +107,7 @@ public class JSONParser {
 
     public JSONValue parse(JSONReader reader, ContainerFactory containerFactory, boolean closeAfterParse) throws ParseException {
         try {
-            return parseValue(reader, containerFactory == null ? defaultFactory : containerFactory);
+            return parseValue(reader, containerFactory == null ? ContainerFactory.DEFAULT : containerFactory);
         } catch (IOException ie) {
             throw new ParseException(reader.getPosition(), ie);
         } finally {
@@ -205,23 +215,5 @@ public class JSONParser {
                     thr(reader);
             }
         }
-    }
-
-    private static void thr(JSONReader reader) {
-        if (reader instanceof JSONReaderImpl)
-            ((JSONReaderImpl) reader).thr();
-        else
-            throw new ParseException(reader.getPosition(), JSONValue.escape(reader.getCurrentToken() + ""));
-
-    }
-
-    private static JSONObject createObject(ContainerFactory containerFactory) {
-        JSONObject jo = containerFactory.newObject();
-        return jo == null ? new JSONObject() : jo;
-    }
-
-    private static JSONArray createArray(ContainerFactory containerFactory) {
-        JSONArray ja = containerFactory.newArray();
-        return ja == null ? new JSONArray() : ja;
     }
 }

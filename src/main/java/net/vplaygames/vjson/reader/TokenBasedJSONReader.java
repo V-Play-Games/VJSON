@@ -16,17 +16,16 @@
 package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
+import net.vplaygames.vjson.parser.TokenType;
 
 import java.io.*;
 
 import static net.vplaygames.vjson.parser.TokenType.*;
 
-public class TokenBasedJSONReader extends JSONReaderImpl {
+public class TokenBasedJSONReader extends AbstractJSONReader {
     private StringBuilder builder = new StringBuilder();
     private Reader reader;
-    private Object currentToken;
-    private int currentTokenType;
-    private int currentPosition = -1;
+    private int position = -1;
     private int lastPos;
     private char[] buffer;
     private boolean closeUnderlyingResource;
@@ -82,7 +81,7 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                 }
             }
         } catch (IOException exc) {
-            throw new ParseException(currentPosition, exc);
+            throw new ParseException(position, exc);
         }
         // End of File
         return true;
@@ -92,40 +91,22 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
         if (isEOF()) {
             thr();
         }
-        return buffer[++currentPosition];
+        return buffer[++position];
     }
 
     @Override
     public int getPosition() {
         checkOpen();
-        return currentPosition;
-    }
-
-    @Override
-    public int getCurrentTokenType() {
-        checkOpen();
-        return currentTokenType;
-    }
-
-    @Override
-    public int getNextTokenType() {
-        checkOpen();
-        return currentTokenType = getNextTokenType0();
-    }
-
-    @Override
-    public Object getCurrentToken() {
-        checkOpen();
-        return currentToken;
+        return position;
     }
 
     private boolean isEOF() {
-        if (lastPos - currentPosition == 1) {
+        if (lastPos - position == 1) {
             if (isStringBased) {
                 return true;
             } else {
                 buffer[0] = buffer[lastPos - 1];
-                currentPosition = -1;
+                position = -1;
                 lastPos = 1;
                 return buffer();
             }
@@ -133,7 +114,7 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
         return false;
     }
 
-    protected int getNextTokenType0() {
+    protected TokenType getNextTokenType0() {
         if (isEOF()) return EOF;
         switch (nextChar()) {
             case '{':
@@ -155,8 +136,7 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                 currentToken = getNumber(true);
                 return NUMBER;
             case '.':
-                builder.delete(0, builder.length());
-                builder.append(0);
+                append('0');
                 currentToken = getDouble(false);
                 return NUMBER;
             case '0':
@@ -190,13 +170,13 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
             case '\n':
                 return getNextTokenType0();
             default:
+                currentToken = buffer[position - 1];
                 thr();
-                return -1;
+                return null;
         }
     }
 
     private String getString() {
-        builder.delete(0, builder.length());
         boolean backslashMode = false;
         loop:
         while (true) {
@@ -204,31 +184,31 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
             if (backslashMode) {
                 switch (c) {
                     case '"':
-                        builder.append('\"');
+                        append('\"');
                         break;
                     case '\\':
-                        builder.append('\\');
+                        append('\\');
                         break;
                     case '/':
-                        builder.append('/');
+                        append('/');
                         break;
                     case 'b':
-                        builder.append('\b');
+                        append('\b');
                         break;
                     case 'f':
-                        builder.append('\f');
+                        append('\f');
                         break;
                     case 'n':
-                        builder.append('\n');
+                        append('\n');
                         break;
                     case 'r':
-                        builder.append('\r');
+                        append('\r');
                         break;
                     case 't':
-                        builder.append('\t');
+                        append('\t');
                         break;
                     case 'u':
-                        builder.append((char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar()));
+                        append((char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar()));
                         break;
                     default:
                         thr();
@@ -251,10 +231,10 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
                     break loop;
                 case '/':
                 default:
-                    builder.append(c);
+                    append(c);
             }
         }
-        return builder.toString();
+        return getBuilderString();
     }
 
     int nextHexChar() {
@@ -271,23 +251,34 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
     }
 
     private double getDouble(boolean negative) {
-        char c = buffer[currentPosition];
+        char c = buffer[position];
         do {
-            builder.append(c);
+            append(c);
         } while (!((c = nextChar()) < '0' || c > '9') || c == '+' || c == '-' || c == 'e' || c == 'E');
-        currentPosition--;
-        return negative ? -Double.parseDouble(builder.toString()) : Double.parseDouble(builder.toString());
+        position--;
+        return negative ? -Double.parseDouble(getBuilderString()) : Double.parseDouble(getBuilderString());
     }
 
     private Number getNumber(boolean negative) {
-        builder.delete(0, builder.length());
-        char c = buffer[currentPosition];
+        char c = buffer[position];
         do {
-            builder.append(c);
+            append(c);
         } while (!((c = nextChar()) < '0' || c > '9'));
-        if (c == '.' || c == 'e' || c == 'E') return getDouble(negative);
-        currentPosition--;
-        return negative ? -Long.parseLong(builder.toString()) : Long.parseLong(builder.toString());
+        if (c == '.' || c == 'e' || c == 'E') {
+            return getDouble(negative);
+        }
+        position--;
+        return negative ? -Long.parseLong(getBuilderString()) : Long.parseLong(getBuilderString());
+    }
+
+    protected void append(char c) {
+        builder.append(c);
+    }
+
+    protected String getBuilderString() {
+        String tor = builder.toString();
+        builder.setLength(0);
+        return tor;
     }
 
     private void checkTrue() {
@@ -303,17 +294,17 @@ public class TokenBasedJSONReader extends JSONReaderImpl {
     }
 
     public void thr() {
-        throw new ParseException(currentPosition, buffer[currentPosition]);
+        throw new ParseException(position, String.valueOf(currentToken));
     }
 
     @Override
     public void close() throws IOException {
         if (lastPos == -1) return;
         lastPos = -1;
-        currentPosition = currentTokenType = 0;
+        position = 0;
+        currentTokenType = null;
         builder = null;
         currentToken = null;
-        // TODO: Recycle the current buffer for future use
         buffer = null;
         if (closeUnderlyingResource) reader.close();
         reader = null;

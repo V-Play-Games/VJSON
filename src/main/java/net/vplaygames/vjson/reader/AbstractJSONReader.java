@@ -1,24 +1,20 @@
 package net.vplaygames.vjson.reader;
 
 import net.vplaygames.vjson.parser.ParseException;
+import net.vplaygames.vjson.parser.TokenType;
 
-public abstract class JSONReaderImpl implements JSONReader {
+public abstract class AbstractJSONReader implements JSONReader {
     protected Object currentToken;
-    protected int currentTokenType;
-
-    protected JSONReaderImpl() {}
+    protected TokenType currentTokenType;
 
     @Override
-    public abstract int getPosition();
-
-    @Override
-    public int getCurrentTokenType() {
+    public TokenType getCurrentTokenType() {
         checkOpen();
         return currentTokenType;
     }
 
     @Override
-    public int getNextTokenType() {
+    public TokenType getNextTokenType() {
         checkOpen();
         return currentTokenType = getNextTokenType0();
     }
@@ -34,7 +30,7 @@ public abstract class JSONReaderImpl implements JSONReader {
         return getCurrentToken();
     }
 
-    public void expectNextType(int type) throws ParseException {
+    public void expectNextType(TokenType type) throws ParseException {
         thr(getNextTokenType() != type);
     }
 
@@ -44,7 +40,7 @@ public abstract class JSONReaderImpl implements JSONReader {
 
     public abstract void thr();
 
-    protected abstract int getNextTokenType0() throws ParseException;
+    protected abstract TokenType getNextTokenType0() throws ParseException;
 
     protected abstract void checkOpen();
 }
