@@ -178,11 +178,6 @@ public class HeapBasedJSONReader extends AbstractJSONReader {
     private boolean closeUnderlyingResource;
     private boolean isStringBased;
 
-    /**
-     * Creates a new scanner
-     *
-     * @param f the File to read input from
-     */
     public HeapBasedJSONReader(File f) throws FileNotFoundException {
         this(new FileReader(f), true);
     }
@@ -237,9 +232,6 @@ public class HeapBasedJSONReader extends AbstractJSONReader {
         lexicalState = currentPos = markedPos = startRead = endRead = position = 0;
     }
 
-    /**
-     * Returns the text matched by the current regular expression.
-     */
     protected String getString(int offset) {
         return new String(buffer, startRead + offset, markedPos - startRead);
     }
