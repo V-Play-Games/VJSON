@@ -1,7 +1,7 @@
-package net.vplaygames.vjson.reader;
+package net.vpg.vjson.reader;
 
-import net.vplaygames.vjson.parser.ParseException;
-import net.vplaygames.vjson.parser.TokenType;
+import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.parser.TokenType;
 
 public abstract class AbstractJSONReader implements JSONReader {
     protected Object currentToken;

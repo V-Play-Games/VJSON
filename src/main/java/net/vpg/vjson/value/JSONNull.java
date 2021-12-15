@@ -1,4 +1,4 @@
-package net.vplaygames.vjson.value;
+package net.vpg.vjson.value;
 
 public final class JSONNull extends JSONValue {
     private static final JSONNull instance = new JSONNull();

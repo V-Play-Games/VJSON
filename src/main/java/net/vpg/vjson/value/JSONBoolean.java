@@ -1,4 +1,4 @@
-package net.vplaygames.vjson.value;
+package net.vpg.vjson.value;
 
 public final class JSONBoolean extends JSONValue {
     private static final JSONBoolean TRUE = new JSONBoolean(true);

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.vplaygames.vjson.value;
+package net.vpg.vjson.value;
 
-import net.vplaygames.vjson.DeserializableValue;
-import net.vplaygames.vjson.parser.JSONParser;
-import net.vplaygames.vjson.parser.ParseException;
-import net.vplaygames.vjson.reader.JSONReader;
+import net.vpg.vjson.DeserializableValue;
+import net.vpg.vjson.parser.JSONParser;
+import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;

@@ -1,7 +1,7 @@
 package net.vplaygames.vjson;
 
-import net.vplaygames.vjson.value.JSONArray;
-import net.vplaygames.vjson.value.JSONObject;
+import net.vpg.vjson.value.JSONArray;
+import net.vpg.vjson.value.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

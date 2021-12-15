@@ -1,4 +1,4 @@
-package net.vplaygames.vjson.value;
+package net.vpg.vjson.value;
 
 public final class JSONNumber extends JSONValue {
     private final Number value;

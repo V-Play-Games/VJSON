@@ -1,6 +1,6 @@
-package net.vplaygames.vjson;
+package net.vpg.vjson;
 
-import net.vplaygames.vjson.value.JSONArray;
+import net.vpg.vjson.value.JSONArray;
 
 public interface SerializableArray extends DeserializableValue {
     JSONArray toArray();

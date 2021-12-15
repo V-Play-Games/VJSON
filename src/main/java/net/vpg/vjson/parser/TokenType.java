@@ -13,8 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.vplaygames.vjson;
+package net.vpg.vjson.parser;
 
-public interface DeserializableValue {
-    String deserialize();
+public enum TokenType {
+    EOF("EOF"),
+    NUMBER("Number"),
+    STRING("String"),
+    TRUE("true"),
+    FALSE("false"),
+    NULL("null"),
+    OBJECT_START("{"),
+    OBJECT_END("}"),
+    ARRAY_START("["),
+    ARRAY_END("]"),
+    COMMA(","),
+    COLON(":");
+    String value;
+
+    TokenType(String value) {
+        this.value = value;
+    }
 }

@@ -1,6 +1,6 @@
-package net.vplaygames.vjson;
+package net.vpg.vjson;
 
-import net.vplaygames.vjson.value.JSONObject;
+import net.vpg.vjson.value.JSONObject;
 
 public interface SerializableObject extends DeserializableValue {
     JSONObject toObject();
