@@ -23,6 +23,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
@@ -110,6 +111,10 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
 
     public Map<String, JSONValue> toMap() {
         return map;
+    }
+
+    public <T> T map(Function<JSONObject, T> converter) {
+        return converter.apply(this);
     }
 
     @Override

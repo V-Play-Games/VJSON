@@ -27,8 +27,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public abstract class JSONValue implements DeserializableValue {
     private static JSONParser parser;
@@ -148,28 +146,11 @@ public abstract class JSONValue implements DeserializableValue {
         return JSONString.escape(toString());
     }
 
-    public <T> T toObject(Function<JSONObject, T> converter) {
-        return converter.apply(toObject());
-    }
-
-    public <T> List<T> toList(Function<JSONValue, T> converter) {
-        return toArray()
-            .stream()
-            .map(converter)
-            .collect(Collectors.toList());
-    }
-
     private void thr(Type type) {
         throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + type);
     }
 
     public enum Type {
-        NULL,
-        STRING,
-        NUMBER,
-        BOOLEAN,
-        OBJECT,
-        ARRAY,
-        UNKNOWN
+        NULL, STRING, NUMBER, BOOLEAN, OBJECT, ARRAY
     }
 }

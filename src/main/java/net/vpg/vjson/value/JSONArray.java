@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -108,6 +109,12 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
 
     public List<JSONValue> toList() {
         return list;
+    }
+
+    public <T> List<T> toList(Function<JSONValue, T> converter) {
+        return list.stream()
+            .map(converter)
+            .collect(Collectors.toList());
     }
 
     public Stream<JSONValue> stream() {
