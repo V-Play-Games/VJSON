@@ -3,8 +3,13 @@ package net.vpg.vjson.value;
 public final class JSONString extends JSONValue {
     private final String value;
 
-    public JSONString(String value) {
+    private JSONString(String value) {
         this.value = value;
+    }
+
+    public static JSONString of(String value) {
+        assert value != null : new NullPointerException("value should not be null");
+        return new JSONString(value);
     }
 
     public static String escape(String s) {

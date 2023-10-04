@@ -1,8 +1,12 @@
 {
   "\"STRING\"": "Unicode: \uABCD, \r\n\f\b\\\"",
-  "INT": 123,
-  "LONG": 1234567890,
-  "DOUBLE": 1.001,
+  "NUMBERS": {
+    "INT": 123,
+    "NEGATIVE": -123,
+    "LONG": 1234567890,
+    "DOUBLE1": 1.010,
+    "DOUBLE2": 1.010e-5
+  },
   "BOOLEAN": true,
   "ARRAY": [null]
 }

@@ -26,11 +26,11 @@ public interface JSONReader extends Closeable {
 
     TokenType getCurrentTokenType();
 
-    TokenType getNextTokenType() throws IOException;
+    TokenType getNextTokenType();
 
     Object getCurrentToken();
 
     Object getNextToken() throws IOException;
 
-    void expectNextType(TokenType type) throws ParseException, IOException;
+    void expectNextType(TokenType type) throws ParseException;
 }

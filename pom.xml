@@ -8,9 +8,6 @@
     <artifactId>maven-deploy</artifactId>
     <version>1.0.1</version>
   </parent>
-  <properties>
-    <project.java.version>1.8</project.java.version>
-  </properties>
   <artifactId>vjson</artifactId>
   <version>0.0.2-SNAPSHOT</version>
   <name>VJSON</name>

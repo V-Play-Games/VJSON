@@ -16,28 +16,30 @@
 package net.vpg.vjson.value;
 
 import net.vpg.vjson.SerializableArray;
-import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@SuppressWarnings("unused")
-public class JSONArray extends JSONValue implements SerializableArray {
-    List<JSONValue> data;
+public class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
+    List<JSONValue> list;
 
     public JSONArray() {
-        this.data = new ArrayList<>();
+        this.list = new ArrayList<>();
     }
 
-    public JSONArray(List<Object> data) {
-        this.data = data.stream().map(JSONValue::of).collect(Collectors.toList());
+    private JSONArray(List<?> list) {
+        this.list = list.stream().map(JSONValue::of).collect(Collectors.toList());
+    }
+
+    public static JSONArray of(List<?> list) {
+        return new JSONArray(list);
     }
 
     public static JSONArray parse(Reader in) throws ParseException {
@@ -68,20 +70,53 @@ public class JSONArray extends JSONValue implements SerializableArray {
         return parse(new File(path));
     }
 
-    public boolean isNull(int index) {
-        return get(index) == null;
-    }
-
-    public boolean isType(int index, Type type) {
-        return get(index).getType() == type;
-    }
-
-    public int length() {
-        return data.size();
+    public int size() {
+        return list.size();
     }
 
     public boolean isEmpty() {
-        return data.isEmpty();
+        return list.isEmpty();
+    }
+
+    public JSONValue get(Integer index) {
+        return JSONValue.of(list.get(index));
+    }
+
+    public JSONArray add(int index, Object value) {
+        list.add(index, JSONValue.of(value));
+        return this;
+    }
+
+    public JSONArray add(Object value) {
+        list.add(JSONValue.of(value));
+        return this;
+    }
+
+    public JSONArray addAll(Collection<?> values) {
+        values.forEach(this::add);
+        return this;
+    }
+
+    public JSONArray addAll(JSONArray array) {
+        return addAll(array.list);
+    }
+
+    public JSONArray remove(int index) {
+        list.remove(index);
+        return this;
+    }
+
+    public List<JSONValue> toList() {
+        return list;
+    }
+
+    public Stream<JSONValue> stream() {
+        return list.stream();
+    }
+
+    @Override
+    public String deserialize() {
+        return list.stream().map(JSONValue::deserialize).collect(Collectors.joining(",", "[", "]"));
     }
 
     @Override
@@ -91,162 +126,11 @@ public class JSONArray extends JSONValue implements SerializableArray {
 
     @Override
     public Object getRaw() {
-        return data;
+        return list;
     }
 
     @Override
     public JSONArray toArray() {
         return this;
-    }
-
-    public JSONValue get(int index) {
-        return JSONValue.of(data.get(index));
-    }
-
-    public Optional<JSONValue> opt(int index) {
-        JSONValue o = data.get(index);
-        return Optional.ofNullable(o);
-    }
-
-    public boolean getBoolean(int index) {
-        return get(index).toBoolean();
-    }
-
-    public boolean getBoolean(int index, boolean defaultValue) {
-        JSONValue value = get(index);
-        return value == null ? defaultValue : value.toBoolean();
-    }
-
-    public Optional<Boolean> optBoolean(int index) {
-        return opt(index).map(JSONValue::toBoolean);
-    }
-
-    public int getInt(int index) {
-        return get(index).toInt();
-    }
-
-    public int getInt(int index, int defaultValue) {
-        JSONValue value = get(index);
-        return value == null ? defaultValue : value.toInt();
-    }
-
-    public OptionalInt optInt(int index) {
-        JSONValue value = get(index);
-        if (value == null) {
-            return OptionalInt.empty();
-        } else {
-            return OptionalInt.of(value.toInt());
-        }
-    }
-
-    public long getLong(int index) {
-        return get(index).toLong();
-    }
-
-    public long getLong(int index, long defaultValue) {
-        JSONValue value = get(index);
-        return value == null ? defaultValue : value.toLong();
-    }
-
-    public OptionalLong optLong(int index) {
-        JSONValue value = get(index);
-        if (value == null) {
-            return OptionalLong.empty();
-        } else {
-            return OptionalLong.of(value.toLong());
-        }
-    }
-
-    public double getDouble(int index) {
-        return get(index).toLong();
-    }
-
-    public double getDouble(int index, long defaultValue) {
-        JSONValue value = get(index);
-        return value == null ? defaultValue : value.toLong();
-    }
-
-    public OptionalDouble optDouble(int index) {
-        JSONValue value = get(index);
-        if (value == null) {
-            return OptionalDouble.empty();
-        } else {
-            return OptionalDouble.of(value.toDouble());
-        }
-    }
-
-    public String getString(int index) {
-        return get(index).toString();
-    }
-
-    public String getString(int index, String defaultValue) {
-        JSONValue value = get(index);
-        return value == null ? defaultValue : value.toString();
-    }
-
-    public Optional<String> optString(int index) {
-        return opt(index).map(JSONValue::toString);
-    }
-
-    public JSONObject getObject(int index) {
-        return get(index).toObject();
-    }
-
-    public Optional<JSONObject> optObject(int index) {
-        return opt(index).map(JSONValue::toObject);
-    }
-
-    public JSONArray getArray(int index) {
-        return get(index).toArray();
-    }
-
-    public Optional<JSONArray> optArray(int index) {
-        return opt(index).map(JSONValue::toArray);
-    }
-
-    public JSONArray add(int index, Object value) {
-        data.add(index, getValue(value));
-        return this;
-    }
-
-    public JSONArray add(Object value) {
-        data.add(getValue(value));
-        return this;
-    }
-
-    protected JSONValue getValue(Object value) {
-        if (value instanceof SerializableArray)
-            return ((SerializableArray) value).toArray();
-        else if (value instanceof SerializableObject)
-            return ((SerializableObject) value).toObject();
-        else
-            return JSONValue.of(value);
-    }
-
-    public JSONArray addAll(Collection<?> values) {
-        values.forEach(this::add);
-        return this;
-    }
-
-    public JSONArray addAll(JSONArray array) {
-        return addAll(array.data);
-    }
-
-    public JSONArray remove(int index) {
-        data.remove(index);
-        return this;
-    }
-
-    public List<JSONValue> toList() {
-        return data;
-    }
-
-    public <T> Stream<T> stream(BiFunction<? super JSONArray, Integer, ? extends T> mapper) {
-        return IntStream.range(0, length()).mapToObj(index -> mapper.apply(this, index));
-    }
-
-    @Override
-    public String deserialize() {
-        return "[" + data.stream().map(JSONValue::deserialize).collect(Collectors.joining(",")) + "]";
     }
 }

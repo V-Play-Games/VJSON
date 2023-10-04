@@ -16,8 +16,8 @@
 package net.vpg.vjson.parser;
 
 import net.vpg.vjson.reader.AbstractJSONReader;
+import net.vpg.vjson.reader.DefaultJSONReader;
 import net.vpg.vjson.reader.JSONReader;
-import net.vpg.vjson.reader.TokenBasedJSONReader;
 import net.vpg.vjson.value.JSONArray;
 import net.vpg.vjson.value.JSONObject;
 import net.vpg.vjson.value.JSONValue;
@@ -28,88 +28,58 @@ import java.net.URL;
 import static net.vpg.vjson.parser.TokenType.*;
 
 /**
- * A parser which parses JSON String using a raw {@code String}, a {@linkplain File},
- * an {@linkplain InputStream}, a {@linkplain Reader}, or a pre-configured {@linkplain JSONReader}.
+ * A parser which parses JSON from a pre-configured {@linkplain JSONReader}.
  * This parser reads tokens through a {@link JSONReader}, which may be passed as a method parameter or
- * constructed from a given {@code String}, {@linkplain File}, {@linkplain InputStream} or {@linkplain Reader}.
+ * constructed from the given arguments.
  * All {@code parse} methods have an overriden method
  *
  * @author Vaibhav Nargwani
  */
 public class JSONParser {
+    private final ContainerFactory factory;
+
+    public JSONParser() {
+        this(ContainerFactory.DEFAULT);
+    }
+
+    public JSONParser(ContainerFactory factory) {
+        this.factory = factory;
+    }
+
     private static void thr(JSONReader reader) {
         if (reader instanceof AbstractJSONReader)
             ((AbstractJSONReader) reader).thr();
         else
             throw new ParseException(reader.getPosition(), String.valueOf(reader.getCurrentToken()));
-
-    }
-
-    private static JSONObject createObject(ContainerFactory containerFactory) {
-        JSONObject jo = containerFactory.newObject();
-        return jo == null ? new JSONObject() : jo;
-    }
-
-    private static JSONArray createArray(ContainerFactory containerFactory) {
-        JSONArray ja = containerFactory.newArray();
-        return ja == null ? new JSONArray() : ja;
     }
 
     public JSONValue parse(String s) throws ParseException {
-        return parse(s, null);
-    }
-
-    public JSONValue parse(String s, ContainerFactory containerFactory) throws ParseException {
-        return parse(new TokenBasedJSONReader(s), containerFactory, true);
+        return parse(new DefaultJSONReader(s), true);
     }
 
     public JSONValue parse(File f) throws ParseException, FileNotFoundException {
-        return parse(f, null);
-    }
-
-    public JSONValue parse(File f, ContainerFactory containerFactory) throws ParseException, FileNotFoundException {
-        return parse(new TokenBasedJSONReader(f), containerFactory, true);
+        return parse(new DefaultJSONReader(f), true);
     }
 
     public JSONValue parse(URL url) throws ParseException, IOException {
-        return parse(url, null);
+        return parse(new DefaultJSONReader(url), true);
     }
 
-    public JSONValue parse(URL url, ContainerFactory containerFactory) throws ParseException, IOException {
-        try (InputStream stream = url.openStream()) {
-            return parse(new TokenBasedJSONReader(stream), containerFactory, true);
-        }
+    public JSONValue parse(InputStream stream) throws ParseException {
+        return parse(new DefaultJSONReader(stream), true);
     }
 
-    public JSONValue parse(InputStream s) throws ParseException {
-        return parse(s, null);
-    }
-
-    public JSONValue parse(InputStream s, ContainerFactory containerFactory) throws ParseException {
-        return parse(new TokenBasedJSONReader(s), containerFactory, true);
-    }
-
-    public JSONValue parse(Reader in) throws ParseException {
-        return parse(in, null);
-    }
-
-    public JSONValue parse(Reader in, ContainerFactory containerFactory) throws ParseException {
-        return parse(new TokenBasedJSONReader(in), containerFactory, true);
+    public JSONValue parse(Reader reader) throws ParseException {
+        return parse(new DefaultJSONReader(reader), true);
     }
 
     public JSONValue parse(JSONReader reader) throws ParseException {
-        return parse(reader, null);
+        return parse(reader, false);
     }
 
-    public JSONValue parse(JSONReader reader, ContainerFactory containerFactory) throws ParseException {
-        return parse(reader, containerFactory, false);
-    }
-
-    public JSONValue parse(JSONReader reader, ContainerFactory containerFactory, boolean closeAfterParse) throws ParseException {
+    public JSONValue parse(JSONReader reader, boolean closeAfterParse) throws ParseException {
         try {
-            return parseValue(reader, containerFactory == null ? ContainerFactory.DEFAULT : containerFactory);
-        } catch (IOException ie) {
-            throw new ParseException(reader.getPosition(), ie);
+            return parseValue(reader);
         } finally {
             if (closeAfterParse) {
                 try {
@@ -121,8 +91,10 @@ public class JSONParser {
         }
     }
 
-    private JSONValue parseValue(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
-        switch (reader.getNextTokenType()) {
+    private JSONValue parseValue(JSONReader reader) throws ParseException {
+        if (reader.getCurrentTokenType() == null)
+            reader.getNextTokenType();
+        switch (reader.getCurrentTokenType()) {
             case STRING:
             case TRUE:
             case FALSE:
@@ -130,89 +102,52 @@ public class JSONParser {
             case NUMBER:
                 return JSONValue.of(reader.getCurrentToken());
             case OBJECT_START:
-                return parseObject(reader, containerFactory);
+                return parseObject(reader);
             case ARRAY_START:
-                return parseArray(reader, containerFactory);
+                return parseArray(reader);
             default:
                 thr(reader);
                 return null;
         }
     }
 
-    private JSONObject parseObject(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
-        JSONObject object = createObject(containerFactory);
-        String key = null;
-        switch (reader.getNextTokenType()) {
-            case STRING:
-                key = (String) reader.getCurrentToken();
-                reader.expectNextType(COLON);
-                break;
-            case OBJECT_END:
-                return object;
-            default:
-                thr(reader);
-        }
+    private JSONObject parseObject(JSONReader reader) throws ParseException {
+        JSONObject object = factory.newObject();
+        reader.getNextTokenType();
         while (true) {
+            TokenType type = reader.getCurrentTokenType();
+            if (type == OBJECT_END)
+                return object;
+            if (type != STRING)
+                thr(reader);
+            String key = reader.getCurrentToken().toString();
+            reader.expectNextType(COLON);
+            reader.getNextTokenType();
+            object.put(key, parseValue(reader));
             switch (reader.getNextTokenType()) {
-                case ARRAY_START:
-                    object.put(key, parseArray(reader, containerFactory));
-                    break;
-                case OBJECT_START:
-                    object.put(key, parseObject(reader, containerFactory));
-                    break;
-                case STRING:
-                case TRUE:
-                case FALSE:
-                case NULL:
-                case NUMBER:
-                    object.put(key, JSONValue.of(reader.getCurrentToken()));
-                    break;
                 default:
                     thr(reader);
-            }
-            switch (reader.getNextTokenType()) {
-                case COMMA:
-                    reader.expectNextType(STRING);
-                    key = (String) reader.getCurrentToken();
-                    reader.expectNextType(COLON);
-                    continue;
                 case OBJECT_END:
                     return object;
-                default:
-                    thr(reader);
+                case COMMA:
+                    reader.getNextTokenType();
             }
         }
     }
 
-    private JSONArray parseArray(JSONReader reader, ContainerFactory containerFactory) throws IOException, ParseException {
-        JSONArray array = createArray(containerFactory);
-        if (reader.getNextTokenType() == ARRAY_END) return array;
+    private JSONArray parseArray(JSONReader reader) throws ParseException {
+        JSONArray array = factory.newArray();
+        if (reader.getNextTokenType() == ARRAY_END)
+            return array;
         while (true) {
-            switch (reader.getCurrentTokenType()) {
-                case ARRAY_START:
-                    array.add(parseArray(reader, containerFactory));
-                    break;
-                case OBJECT_START:
-                    array.add(parseObject(reader, containerFactory));
-                    break;
-                case STRING:
-                case TRUE:
-                case FALSE:
-                case NULL:
-                case NUMBER:
-                    array.add(JSONValue.of(reader.getCurrentToken()));
-                    break;
+            array.add(parseValue(reader));
+            switch (reader.getNextTokenType()) {
                 default:
                     thr(reader);
-            }
-            switch (reader.getNextTokenType()) {
-                case COMMA:
-                    reader.getNextTokenType();
-                    continue;
                 case ARRAY_END:
                     return array;
-                default:
-                    thr(reader);
+                case COMMA:
+                    reader.getNextTokenType();
             }
         }
     }

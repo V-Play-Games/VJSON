@@ -19,46 +19,51 @@ import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.parser.TokenType;
 
 import java.io.*;
+import java.net.URL;
 
 import static net.vpg.vjson.parser.TokenType.*;
 
-public class TokenBasedJSONReader extends AbstractJSONReader {
+public class DefaultJSONReader extends AbstractJSONReader {
+    private final boolean close;
+    private final boolean isStringBased;
     private StringBuilder builder = new StringBuilder();
     private Reader reader;
     private int position = -1;
     private int lastPos;
     private char[] buffer;
-    private boolean closeUnderlyingResource;
-    private boolean isStringBased;
 
-    public TokenBasedJSONReader(File f) throws FileNotFoundException {
+    public DefaultJSONReader(File f) throws FileNotFoundException {
         this(new FileReader(f));
     }
 
-    public TokenBasedJSONReader(InputStream in) {
+    public DefaultJSONReader(URL url) throws IOException {
+        this(url.openStream(), true);
+    }
+
+    public DefaultJSONReader(InputStream in) {
         this(in, false);
     }
 
-    public TokenBasedJSONReader(InputStream in, boolean closeUnderlyingResource) {
-        this(new InputStreamReader(in), closeUnderlyingResource);
+    public DefaultJSONReader(InputStream in, boolean close) {
+        this(new InputStreamReader(in), close);
     }
 
-    public TokenBasedJSONReader(Reader in) {
+    public DefaultJSONReader(Reader in) {
         this(in, false);
     }
 
-    public TokenBasedJSONReader(Reader in, boolean closeUnderlyingResource) {
+    public DefaultJSONReader(Reader in, boolean close) {
         buffer = new char[1048576];
         reader = in;
-        this.closeUnderlyingResource = closeUnderlyingResource;
+        this.close = close;
         isStringBased = false;
         buffer();
     }
 
-    public TokenBasedJSONReader(String s) {
+    public DefaultJSONReader(String s) {
         buffer = s.toCharArray();
         isStringBased = true;
-        closeUnderlyingResource = false;
+        close = false;
         lastPos = s.length();
     }
 
@@ -133,12 +138,6 @@ public class TokenBasedJSONReader extends AbstractJSONReader {
                 currentToken = getString();
                 return STRING;
             case '-':
-                currentToken = getNumber(true);
-                return NUMBER;
-            case '.':
-                append('0');
-                currentToken = getDouble(false);
-                return NUMBER;
             case '0':
             case '1':
             case '2':
@@ -149,7 +148,7 @@ public class TokenBasedJSONReader extends AbstractJSONReader {
             case '7':
             case '8':
             case '9':
-                currentToken = getNumber(false);
+                currentToken = getNumber();
                 return NUMBER;
             case 't':
                 checkTrue();
@@ -237,45 +236,28 @@ public class TokenBasedJSONReader extends AbstractJSONReader {
         return getBuilderString();
     }
 
-    int nextHexChar() {
-        char c = nextChar();
-        if (!(c < '0' || c > '9'))
-            return c - '0';
-        if (!(c < 'A' || c > 'F'))
-            return c - 'A' + 10;
-        if (!(c < 'a' || c > 'f'))
-            return c - 'a' + 10;
-        thr();
-        // it'll never reach here but still...
-        return -1;
+    private int nextHexChar() {
+        int c = Character.digit(nextChar(), 16);
+        thr(c == -1);
+        return c;
     }
 
-    private double getDouble(boolean negative) {
-        char c = buffer[position];
-        do {
-            append(c);
-        } while (!((c = nextChar()) < '0' || c > '9') || c == '+' || c == '-' || c == 'e' || c == 'E');
+    private Number getNumber() {
         position--;
-        return negative ? -Double.parseDouble(getBuilderString()) : Double.parseDouble(getBuilderString());
-    }
-
-    private Number getNumber(boolean negative) {
-        char c = buffer[position];
-        do {
+        char c;
+        while (Character.isDigit(c = nextChar()) || c == '.' || c == '+' || c == '-' || c == 'e' || c == 'E') {
             append(c);
-        } while (!((c = nextChar()) < '0' || c > '9'));
-        if (c == '.' || c == 'e' || c == 'E') {
-            return getDouble(negative);
         }
         position--;
-        return negative ? -Long.parseLong(getBuilderString()) : Long.parseLong(getBuilderString());
+        String s = getBuilderString();
+        return s.contains(".") ? Double.parseDouble(s) : Long.parseLong(s);
     }
 
-    protected void append(char c) {
+    private void append(char c) {
         builder.append(c);
     }
 
-    protected String getBuilderString() {
+    private String getBuilderString() {
         String tor = builder.toString();
         builder.setLength(0);
         return tor;
@@ -306,7 +288,7 @@ public class TokenBasedJSONReader extends AbstractJSONReader {
         builder = null;
         currentToken = null;
         buffer = null;
-        if (closeUnderlyingResource) reader.close();
+        if (close) reader.close();
         reader = null;
     }
 

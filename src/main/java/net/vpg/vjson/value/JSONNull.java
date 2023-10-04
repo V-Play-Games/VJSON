@@ -21,6 +21,11 @@ public final class JSONNull extends JSONValue {
     }
 
     @Override
+    public boolean isNull() {
+        return true;
+    }
+
+    @Override
     public String deserialize() {
         return "null";
     }

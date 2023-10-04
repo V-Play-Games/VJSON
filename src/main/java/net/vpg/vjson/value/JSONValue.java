@@ -16,6 +16,8 @@
 package net.vpg.vjson.value;
 
 import net.vpg.vjson.DeserializableValue;
+import net.vpg.vjson.SerializableArray;
+import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.JSONParser;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.reader.JSONReader;
@@ -28,12 +30,11 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("unused")
 public abstract class JSONValue implements DeserializableValue {
     private static JSONParser parser;
 
     protected static JSONParser getParser() {
-        return parser == null ? new JSONParser() : parser;
+        return parser == null ? parser = new JSONParser() : parser;
     }
 
     public static JSONValue parse(Reader in) throws ParseException {
@@ -64,30 +65,31 @@ public abstract class JSONValue implements DeserializableValue {
         return parse(new File(path));
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("rawtypes")
     public static JSONValue of(Object o) {
         if (o == null)
             return JSONNull.getInstance();
         else if (o instanceof JSONValue)
             return (JSONValue) o;
         else if (o instanceof List)
-            return new JSONArray((List) o);
+            return JSONArray.of((List) o);
         else if (o instanceof Map)
-            return new JSONObject((Map) o);
+            return JSONObject.of((Map) o);
         else if (o instanceof String)
-            return new JSONString((String) o);
+            return JSONString.of((String) o);
         else if (o instanceof Number)
-            return new JSONNumber((Number) o);
+            return JSONNumber.of((Number) o);
         else if (o instanceof Boolean)
             return JSONBoolean.of((boolean) o);
+        else if (o instanceof SerializableArray)
+            return ((SerializableArray) o).toArray();
+        else if (o instanceof SerializableObject)
+            return ((SerializableObject) o).toObject();
         else
             throw new UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass());
     }
 
     public abstract Type getType();
-
-    @Override
-    public abstract String deserialize();
 
     public abstract Object getRaw();
 
@@ -96,20 +98,29 @@ public abstract class JSONValue implements DeserializableValue {
         return o instanceof JSONValue && Objects.equals(((JSONValue) o).getRaw(), getRaw());
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getRaw());
+    }
+
     public boolean toBoolean() {
-        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + Type.BOOLEAN);
+        thr(Type.BOOLEAN);
+        return false;
     }
 
     public Number toNumber() {
-        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + Type.NUMBER);
+        thr(Type.NUMBER);
+        return null;
     }
 
     public JSONObject toObject() {
-        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + Type.OBJECT);
+        thr(Type.OBJECT);
+        return null;
     }
 
     public JSONArray toArray() {
-        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + Type.ARRAY);
+        thr(Type.ARRAY);
+        return null;
     }
 
     public int toInt() {
@@ -120,12 +131,12 @@ public abstract class JSONValue implements DeserializableValue {
         return toNumber().longValue();
     }
 
-    public float toFloat() {
-        return toNumber().floatValue();
-    }
-
     public double toDouble() {
         return toNumber().doubleValue();
+    }
+
+    public boolean isNull() {
+        return false;
     }
 
     @Override
@@ -143,9 +154,13 @@ public abstract class JSONValue implements DeserializableValue {
 
     public <T> List<T> toList(Function<JSONValue, T> converter) {
         return toArray()
-            .stream(JSONArray::get)
+            .stream()
             .map(converter)
             .collect(Collectors.toList());
+    }
+
+    private void thr(Type type) {
+        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + type);
     }
 
     public enum Type {

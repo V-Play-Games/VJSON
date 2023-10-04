@@ -15,34 +15,30 @@
  */
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.SerializableArray;
 import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-@SuppressWarnings("unused")
-public class JSONObject extends JSONValue implements SerializableObject {
+public class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
     Map<String, JSONValue> map;
 
     public JSONObject() {
         map = new HashMap<>();
     }
 
-    /**
-     * Creates a new JSONObject from a Map and copies key-value pairs
-     *
-     * @param map the map to copy key-value pairs from
-     */
-    public JSONObject(Map<?, ?> map) {
+    private JSONObject(Map<?, ?> map) {
         this();
         putAll(map);
+    }
+
+    public static JSONObject of(Map<?, ?> map) {
+        return new JSONObject(map);
     }
 
     public static JSONObject parse(Reader in) throws ParseException {
@@ -74,14 +70,14 @@ public class JSONObject extends JSONValue implements SerializableObject {
     }
 
     public boolean isNull(String key) {
-        return get(key) == null;
+        return get(key).isNull();
     }
 
     public boolean isType(String key, Type type) {
         return get(key).getType() == type;
     }
 
-    public int length() {
+    public int size() {
         return map.size();
     }
 
@@ -93,123 +89,13 @@ public class JSONObject extends JSONValue implements SerializableObject {
         return JSONValue.of(map.get(key));
     }
 
-    public Optional<JSONValue> opt(String key) {
-        JSONValue o = map.get(key);
-        return Optional.ofNullable(o);
-    }
-
-    public boolean getBoolean(String key) {
-        return get(key).toBoolean();
-    }
-
-    public boolean getBoolean(String key, boolean defaultValue) {
-        JSONValue value = get(key);
-        return value == null ? defaultValue : value.toBoolean();
-    }
-
-    public Optional<Boolean> optBoolean(String key) {
-        return opt(key).map(JSONValue::toBoolean);
-    }
-
-    public int getInt(String key) {
-        return get(key).toInt();
-    }
-
-    public int getInt(String key, int defaultValue) {
-        JSONValue value = get(key);
-        return value == null ? defaultValue : value.toInt();
-    }
-
-    public OptionalInt optInt(String key) {
-        JSONValue value = get(key);
-        if (value == null) {
-            return OptionalInt.empty();
-        } else {
-            return OptionalInt.of(value.toInt());
-        }
-    }
-
-    public long getLong(String key) {
-        return get(key).toLong();
-    }
-
-    public long getLong(String key, long defaultValue) {
-        JSONValue value = get(key);
-        return value == null ? defaultValue : value.toLong();
-    }
-
-    public OptionalLong optLong(String key) {
-        JSONValue value = get(key);
-        if (value == null) {
-            return OptionalLong.empty();
-        } else {
-            return OptionalLong.of(value.toLong());
-        }
-    }
-
-    public double getDouble(String key) {
-        return get(key).toLong();
-    }
-
-    public double getDouble(String key, long defaultValue) {
-        JSONValue value = get(key);
-        return value == null ? defaultValue : value.toLong();
-    }
-
-    public OptionalDouble optDouble(String key) {
-        JSONValue value = get(key);
-        if (value == null) {
-            return OptionalDouble.empty();
-        } else {
-            return OptionalDouble.of(value.toDouble());
-        }
-    }
-
-    public String getString(String key) {
-        return get(key).toString();
-    }
-
-    public String getString(String key, String defaultValue) {
-        JSONValue value = get(key);
-        return value == null ? defaultValue : value.toString();
-    }
-
-    public Optional<String> optString(String key) {
-        return opt(key).map(JSONValue::toString);
-    }
-
-    public JSONObject getObject(String key) {
-        return get(key).toObject();
-    }
-
-    public Optional<JSONObject> optObject(String key) {
-        return opt(key).map(JSONValue::toObject);
-    }
-
-    public JSONArray getArray(String key) {
-        return get(key).toArray();
-    }
-
-    public Optional<JSONArray> optArray(String key) {
-        return opt(key).map(JSONValue::toArray);
-    }
-
-    public JSONObject put(String key, Object value) {
-        map.put(key, getValue(value));
+    public JSONObject put(String key, Object val) {
+        map.put(key, JSONValue.of(val));
         return this;
     }
 
-    protected JSONValue getValue(Object value) {
-        if (value instanceof SerializableArray)
-            return ((SerializableArray) value).toArray();
-        else if (value instanceof SerializableObject)
-            return ((SerializableObject) value).toObject();
-        else
-            return JSONValue.of(value);
-    }
-
     public JSONObject putAll(Map<?, ?> map) {
-        map.forEach((k, v) -> put(String.valueOf(k), JSONValue.of(v)));
+        map.forEach((k, v) -> put(String.valueOf(k), v));
         return this;
     }
 
@@ -226,28 +112,12 @@ public class JSONObject extends JSONValue implements SerializableObject {
         return map;
     }
 
-    public Set<String> getKeys() {
-        return map.keySet();
-    }
-
-    public Collection<JSONValue> getValues() {
-        return map.values();
-    }
-
-    public Set<Map.Entry<String, JSONValue>> getEntrySet() {
-        return map.entrySet();
-    }
-
-    public <T> Stream<T> stream(BiFunction<? super JSONObject, String, ? extends T> mapper) {
-        return getKeys().stream().map(key -> mapper.apply(this, key));
-    }
-
     @Override
     public String deserialize() {
-        return "{" + map.entrySet()
+        return map.entrySet()
             .stream()
             .map(e -> "\"" + JSONString.escape(e.getKey()) + "\":" + e.getValue().deserialize())
-            .collect(Collectors.joining(",")) + "}";
+            .collect(Collectors.joining(",", "{", "}"));
     }
 
     @Override
@@ -256,12 +126,12 @@ public class JSONObject extends JSONValue implements SerializableObject {
     }
 
     @Override
-    public JSONObject toObject() {
-        return this;
+    public Object getRaw() {
+        return map;
     }
 
     @Override
-    public Object getRaw() {
-        return map;
+    public JSONObject toObject() {
+        return this;
     }
 }
