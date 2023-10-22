@@ -250,7 +250,11 @@ public class DefaultJSONReader extends AbstractJSONReader {
         }
         position--;
         String s = getBuilderString();
-        return s.contains(".") ? Double.parseDouble(s) : Long.parseLong(s);
+        // Don't use ternary to avoid casting to Double sometimes
+        if (s.contains(".") || s.contains("e") || s.contains("E"))
+            return Double.parseDouble(s);
+        else
+            return Long.parseLong(s);
     }
 
     private void append(char c) {
