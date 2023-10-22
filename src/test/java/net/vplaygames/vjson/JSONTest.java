@@ -31,6 +31,6 @@ class JSONTest {
 
     @Test
     void checkCorrectParse() throws IOException {
-        Assertions.assertEquals(obj, JSONObject.parse(url));
+        Assertions.assertEquals(obj.toString(), JSONObject.parse(url).toString());
     }
 }
