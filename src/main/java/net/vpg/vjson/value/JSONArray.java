@@ -133,7 +133,7 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
 
     @Override
     public Object getRaw() {
-        return list;
+        return list.stream().map(JSONValue::getRaw).collect(Collectors.toList());
     }
 
     @Override

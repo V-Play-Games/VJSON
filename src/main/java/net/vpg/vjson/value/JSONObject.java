@@ -132,7 +132,7 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
 
     @Override
     public Object getRaw() {
-        return map;
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getRaw()));
     }
 
     @Override
