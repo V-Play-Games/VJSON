@@ -17,12 +17,15 @@ package net.vpg.vjson.value;
 
 import net.vpg.vjson.SerializableArray;
 import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
 import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -139,5 +142,40 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
     @Override
     public JSONArray toArray() {
         return this;
+    }
+
+    @Override
+    public void toPrettyString(PrettyPrinter printer) {
+        PrettyPrintConfig config = printer.getConfig();
+        printer.print("[");
+        if (config.isArrayContentsOnSameLine()) {
+            if (config.isSpaceWithinBrackets())
+                printer.space();
+        } else {
+            printer.incrementIndentLevel();
+            printer.newLineAndIndent();
+        }
+        Iterator<JSONValue> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            iterator.next().toPrettyString(printer);
+            if (iterator.hasNext()) {
+                if (config.isSpaceBeforeComma())
+                    printer.space();
+                printer.print(",");
+                if (config.isArrayContentsOnSameLine()) {
+                    if (config.isSpaceAfterComma())
+                        printer.space();
+                } else
+                    printer.newLineAndIndent();
+            }
+        }
+        if (config.isArrayContentsOnSameLine()) {
+            if (config.isSpaceWithinBrackets())
+                printer.space();
+        } else {
+            printer.decrementIndentLevel();
+            printer.newLineAndIndent();
+        }
+        printer.print("}");
     }
 }

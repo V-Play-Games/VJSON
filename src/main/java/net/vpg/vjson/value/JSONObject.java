@@ -17,11 +17,14 @@ package net.vpg.vjson.value;
 
 import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
 import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -138,5 +141,47 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
     @Override
     public JSONObject toObject() {
         return this;
+    }
+
+    @Override
+    public void toPrettyString(PrettyPrinter printer) {
+        PrettyPrintConfig config = printer.getConfig();
+        printer.print("{");
+        if (config.isObjectContentsOnSameLine()) {
+            if (config.isSpaceWithinBraces())
+                printer.space();
+        } else {
+            printer.incrementIndentLevel();
+            printer.newLineAndIndent();
+        }
+        Iterator<Map.Entry<String, JSONValue>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, JSONValue> next = iterator.next();
+            printer.print("\"" + next.getKey() + "\"");
+            if (config.isSpaceBeforeColon())
+                printer.space();
+            printer.print(":");
+            if (config.isSpaceAfterColon())
+                printer.space();
+            next.getValue().toPrettyString(printer);
+            if (iterator.hasNext()) {
+                if (config.isSpaceBeforeComma())
+                    printer.space();
+                printer.print(",");
+                if (config.isObjectContentsOnSameLine()) {
+                    if (config.isSpaceAfterComma())
+                        printer.space();
+                } else
+                    printer.newLineAndIndent();
+            }
+        }
+        if (config.isObjectContentsOnSameLine()) {
+            if (config.isSpaceWithinBraces())
+                printer.space();
+        } else {
+            printer.decrementIndentLevel();
+            printer.newLineAndIndent();
+        }
+        printer.print("}");
     }
 }

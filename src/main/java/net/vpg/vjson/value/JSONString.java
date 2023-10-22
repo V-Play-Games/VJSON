@@ -64,6 +64,6 @@ public final class JSONString extends JSONValue {
 
     @Override
     public String deserialize() {
-        return "\"" + value + "\"";
+        return "\"" + escape(value) + "\"";
     }
 }

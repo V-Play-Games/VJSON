@@ -20,6 +20,8 @@ import net.vpg.vjson.SerializableArray;
 import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.JSONParser;
 import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
 import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
@@ -144,6 +146,16 @@ public abstract class JSONValue implements DeserializableValue {
 
     public String toEscapedString() {
         return JSONString.escape(toString());
+    }
+
+    public String toPrettyString() {
+        StringBuilder sb = new StringBuilder();
+        toPrettyString(new PrettyPrinter(new PrettyPrintConfig(), sb));
+        return sb.toString();
+    }
+
+    public void toPrettyString(PrettyPrinter printer) {
+        printer.print(deserialize());
     }
 
     private void thr(Type type) {
