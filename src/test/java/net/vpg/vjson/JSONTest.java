@@ -1,4 +1,4 @@
-package net.vplaygames.vjson;
+package net.vpg.vjson;
 
 import net.vpg.vjson.value.JSONArray;
 import net.vpg.vjson.value.JSONObject;
