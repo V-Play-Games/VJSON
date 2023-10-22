@@ -9,7 +9,7 @@
     <version>1.0.1</version>
   </parent>
   <artifactId>vjson</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
   <name>VJSON</name>
   <description>A simple library to serialize and deserialize JSON text</description>
   <url>http://github.com/V-Play-Games/VJSON</url>
