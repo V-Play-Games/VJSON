@@ -20,10 +20,40 @@ import net.vpg.vjson.parser.TokenType;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Map;
+import java.util.function.Function;
 
 import static net.vpg.vjson.parser.TokenType.*;
 
 public class DefaultJSONReader extends AbstractJSONReader {
+    private static final Map<Character, TokenType> typeMap = Map.of(
+        '{', OBJECT_START,
+        '}', OBJECT_END,
+        '[', ARRAY_START,
+        ']', ARRAY_END,
+        ',', COMMA,
+        ':', COLON,
+        '"', STRING,
+        't', TRUE,
+        'f', FALSE,
+        'n', NULL
+    );
+    private static final Map<Character, Function<DefaultJSONReader, Object>> tokenMap = Map.of(
+        '"', DefaultJSONReader::getString,
+        't', reader -> {
+            reader.checkToken("true");
+            return true;
+        },
+        'f', reader -> {
+            reader.checkToken("false");
+            return false;
+        },
+        'n', reader -> {
+            reader.checkToken("null");
+            return null;
+        }
+
+    );
     private final boolean close;
     private final boolean isStringBased;
     private StringBuilder builder = new StringBuilder();
@@ -121,63 +151,21 @@ public class DefaultJSONReader extends AbstractJSONReader {
 
     protected TokenType getNextTokenType0() {
         if (isEOF()) return EOF;
-        switch (nextChar()) {
-            case '{':
-                return OBJECT_START;
-            case '}':
-                return OBJECT_END;
-            case '[':
-                return ARRAY_START;
-            case ']':
-                return ARRAY_END;
-            case ',':
-                return COMMA;
-            case ':':
-                return COLON;
-            case '"':
-                currentToken = getString();
-                return STRING;
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                currentToken = getNumber();
-                return NUMBER;
-            case 't':
-                checkTrue();
-                currentToken = true;
-                return TRUE;
-            case 'f':
-                checkFalse();
-                currentToken = false;
-                return FALSE;
-            case 'n':
-                checkNull();
-                currentToken = null;
-                return NULL;
-            case ' ':
-            case '\0':
-            case '\t':
-            case '\r':
-            case '\n':
-                return getNextTokenType0();
-            default:
-                currentToken = buffer[position - 1];
-                thr();
-                return null;
+        char c = nextChar();
+        TokenType type = typeMap.get(c);
+        currentToken = tokenMap.getOrDefault(c, r -> c).apply(this);
+        if (Character.isDigit(c) || c == '-') {
+            currentToken = getNumber();
+            return NUMBER;
         }
+        if (c == ' ' || c == '\0' || c == '\t' || c == '\r' || c == '\n')
+            return getNextTokenType0();
+        thr(type == null);
+        return type;
     }
 
     private String getString() {
         boolean backslashMode = false;
-        loop:
         while (true) {
             char c = nextChar();
             if (backslashMode) {
@@ -222,18 +210,15 @@ public class DefaultJSONReader extends AbstractJSONReader {
                 case '\r':
                 case '\t':
                     thr();
-                    break;
                 case '\\':
                     backslashMode = true;
                     continue;
                 case '"':
-                    break loop;
-                case '/':
+                    return getBuilderString();
                 default:
                     append(c);
             }
         }
-        return getBuilderString();
     }
 
     private int nextHexChar() {
@@ -267,19 +252,15 @@ public class DefaultJSONReader extends AbstractJSONReader {
         return tor;
     }
 
-    private void checkTrue() {
-        thr(nextChar() != 'r' || nextChar() != 'u' || nextChar() != 'e');
+    private void checkToken(String token) {
+        position--;
+        for (int i = 0; i < token.length(); i++) {
+            thr(token.charAt(i) != nextChar());
+        }
     }
 
-    private void checkFalse() {
-        thr(nextChar() != 'a' || nextChar() != 'l' || nextChar() != 's' || nextChar() != 'e');
-    }
-
-    private void checkNull() {
-        thr(nextChar() != 'u' || nextChar() != 'l' || nextChar() != 'l');
-    }
-
-    public void thr() {
+    @Override
+    protected void thr() {
         throw new ParseException(position, String.valueOf(currentToken));
     }
 

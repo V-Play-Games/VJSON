@@ -47,10 +47,7 @@ public class JSONParser {
     }
 
     private static void thr(JSONReader reader) {
-        if (reader instanceof AbstractJSONReader)
-            ((AbstractJSONReader) reader).thr();
-        else
-            throw new ParseException(reader.getPosition(), String.valueOf(reader.getCurrentToken()));
+        throw new ParseException(reader.getPosition(), String.valueOf(reader.getCurrentToken()));
     }
 
     public JSONValue parse(String s) throws ParseException {
