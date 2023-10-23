@@ -32,5 +32,12 @@ public interface JSONReader extends Closeable {
 
     Object getNextToken() throws IOException;
 
-    void expectNextType(TokenType type) throws ParseException;
+    default void expectNextType(TokenType type) throws ParseException {
+        if (getNextTokenType() != type)
+            error();
+    }
+
+    default void error() throws ParseException {
+        throw new ParseException(getPosition(), String.valueOf(getCurrentToken()));
+    }
 }

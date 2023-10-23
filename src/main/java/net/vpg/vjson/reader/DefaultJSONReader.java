@@ -124,7 +124,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
 
     private char nextChar() {
         if (isEOF()) {
-            thr();
+            error();
         }
         return buffer[++position];
     }
@@ -160,7 +160,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
         }
         if (c == ' ' || c == '\0' || c == '\t' || c == '\r' || c == '\n')
             return getNextTokenType0();
-        thr(type == null);
+        if (type == null) error();
         return type;
     }
 
@@ -198,7 +198,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
                         append((char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar()));
                         break;
                     default:
-                        thr();
+                        error();
                 }
                 c = nextChar();
                 backslashMode = false;
@@ -209,7 +209,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
                 case '\n':
                 case '\r':
                 case '\t':
-                    thr();
+                    error();
                 case '\\':
                     backslashMode = true;
                     continue;
@@ -223,7 +223,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
 
     private int nextHexChar() {
         int c = Character.digit(nextChar(), 16);
-        thr(c == -1);
+        if (c == -1) error();
         return c;
     }
 
@@ -254,14 +254,9 @@ public class DefaultJSONReader extends AbstractJSONReader {
 
     private void checkToken(String token) {
         position--;
-        for (int i = 0; i < token.length(); i++) {
-            thr(token.charAt(i) != nextChar());
-        }
-    }
-
-    @Override
-    protected void thr() {
-        throw new ParseException(position, String.valueOf(currentToken));
+        for (int i = 0; i < token.length(); i++)
+            if (token.charAt(i) != nextChar())
+                error();
     }
 
     @Override

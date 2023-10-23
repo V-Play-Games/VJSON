@@ -15,7 +15,6 @@
  */
 package net.vpg.vjson.parser;
 
-import net.vpg.vjson.reader.AbstractJSONReader;
 import net.vpg.vjson.reader.DefaultJSONReader;
 import net.vpg.vjson.reader.JSONReader;
 import net.vpg.vjson.value.JSONArray;
@@ -44,10 +43,6 @@ public class JSONParser {
 
     public JSONParser(ContainerFactory factory) {
         this.factory = factory;
-    }
-
-    private static void thr(JSONReader reader) {
-        throw new ParseException(reader.getPosition(), String.valueOf(reader.getCurrentToken()));
     }
 
     public JSONValue parse(String s) throws ParseException {
@@ -92,6 +87,8 @@ public class JSONParser {
         if (reader.getCurrentTokenType() == null)
             reader.getNextTokenType();
         switch (reader.getCurrentTokenType()) {
+            default:
+                reader.error();
             case STRING:
             case TRUE:
             case FALSE:
@@ -102,9 +99,6 @@ public class JSONParser {
                 return parseObject(reader);
             case ARRAY_START:
                 return parseArray(reader);
-            default:
-                thr(reader);
-                return null;
         }
     }
 
@@ -116,14 +110,14 @@ public class JSONParser {
             if (type == OBJECT_END)
                 return object;
             if (type != STRING)
-                thr(reader);
+                reader.error();
             String key = reader.getCurrentToken().toString();
             reader.expectNextType(COLON);
             reader.getNextTokenType();
             object.put(key, parseValue(reader));
             switch (reader.getNextTokenType()) {
                 default:
-                    thr(reader);
+                    reader.error();
                 case OBJECT_END:
                     return object;
                 case COMMA:
@@ -140,7 +134,7 @@ public class JSONParser {
             array.add(parseValue(reader));
             switch (reader.getNextTokenType()) {
                 default:
-                    thr(reader);
+                    reader.error();
                 case ARRAY_END:
                     return array;
                 case COMMA:

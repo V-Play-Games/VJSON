@@ -30,16 +30,6 @@ public abstract class AbstractJSONReader implements JSONReader {
         return currentToken;
     }
 
-    public void expectNextType(TokenType type) throws ParseException {
-        thr(getNextTokenType() != type);
-    }
-
-    protected void thr(boolean check) {
-        if (check) thr();
-    }
-
-    protected abstract void thr();
-
     protected abstract TokenType getNextTokenType0() throws ParseException;
 
     protected abstract void checkOpen();
