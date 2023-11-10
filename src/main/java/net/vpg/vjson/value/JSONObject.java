@@ -27,10 +27,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
-    Map<String, JSONValue> map;
+    private final Map<String, JSONValue> map;
 
     public JSONObject() {
         map = new HashMap<>();
@@ -73,12 +74,10 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
         return parse(new File(path));
     }
 
-    public boolean isNull(String key) {
-        return get(key).isNull();
-    }
-
-    public boolean isType(String key, Type type) {
-        return get(key).getType() == type;
+    public static <T> Collector<T, ?, JSONObject> collector(Function<T, String> keyMapper, Function<T, ?> valueMapper) {
+        return Collector.of(JSONObject::new,
+            (obj, e) -> obj.put(keyMapper.apply(e), valueMapper.apply(e)),
+            JSONObject::putAll);
     }
 
     public int size() {
@@ -104,7 +103,8 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
     }
 
     public JSONObject putAll(JSONObject object) {
-        return putAll(object.map);
+        map.putAll(object.map);
+        return this;
     }
 
     public JSONObject remove(String key) {
@@ -147,13 +147,11 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("{");
-        if (config.isObjectContentsOnSameLine()) {
-            if (config.isSpaceWithinBraces())
-                printer.space();
-        } else {
+        if (!config.isObjectContentsOnSameLine()) {
             printer.incrementIndentLevel();
             printer.newLineAndIndent();
-        }
+        } else if (config.isSpaceWithinBraces())
+            printer.space();
         Iterator<Map.Entry<String, JSONValue>> iterator = map.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, JSONValue> next = iterator.next();
@@ -168,20 +166,17 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
                 if (config.isSpaceBeforeComma())
                     printer.space();
                 printer.print(",");
-                if (config.isObjectContentsOnSameLine()) {
-                    if (config.isSpaceAfterComma())
-                        printer.space();
-                } else
+                if (!config.isObjectContentsOnSameLine())
                     printer.newLineAndIndent();
+                else if (config.isSpaceAfterComma())
+                    printer.space();
             }
         }
-        if (config.isObjectContentsOnSameLine()) {
-            if (config.isSpaceWithinBraces())
-                printer.space();
-        } else {
+        if (!config.isObjectContentsOnSameLine()) {
             printer.decrementIndentLevel();
             printer.newLineAndIndent();
-        }
+        } else if (config.isSpaceWithinBraces())
+            printer.space();
         printer.print("}");
     }
 }

@@ -8,7 +8,8 @@ public final class JSONString extends JSONValue {
     }
 
     public static JSONString of(String value) {
-        assert value != null : new NullPointerException("value should not be null");
+        if (value == null)
+            throw new NullPointerException("value should not be null");
         return new JSONString(value);
     }
 
@@ -22,13 +23,24 @@ public final class JSONString extends JSONValue {
     }
 
     public static String escape(char c) {
-        return c == '\\' ? "\\\\"
-            : c == '\b' ? "\\b"
-            : c == '\f' ? "\\f"
-            : c == '\n' ? "\\n"
-            : c == '\r' ? "\\r"
-            : c == '\t' ? "\\t"
-            : c == '/' ? "\\/" : Character.toString(c);
+        switch (c) {
+            case '\\':
+                return "\\\\";
+            case '\b':
+                return "\\b";
+            case '\f':
+                return "\\f";
+            case '\n':
+                return "\\n";
+            case '\r':
+                return "\\r";
+            case '\t':
+                return "\\t";
+            case '/':
+                return "\\/";
+            default:
+                return Character.toString(c);
+        }
     }
 
     public static String unescape(String s) {
@@ -45,11 +57,6 @@ public final class JSONString extends JSONValue {
     @Override
     public Type getType() {
         return Type.STRING;
-    }
-
-    @Override
-    public String toEscapedString() {
-        return escape(value);
     }
 
     @Override

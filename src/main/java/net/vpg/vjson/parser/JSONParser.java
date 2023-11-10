@@ -35,16 +35,6 @@ import static net.vpg.vjson.parser.TokenType.*;
  * @author Vaibhav Nargwani
  */
 public class JSONParser {
-    private final ContainerFactory factory;
-
-    public JSONParser() {
-        this(ContainerFactory.DEFAULT);
-    }
-
-    public JSONParser(ContainerFactory factory) {
-        this.factory = factory;
-    }
-
     public JSONValue parse(String s) throws ParseException {
         return parse(new DefaultJSONReader(s), true);
     }
@@ -103,7 +93,7 @@ public class JSONParser {
     }
 
     private JSONObject parseObject(JSONReader reader) throws ParseException {
-        JSONObject object = factory.newObject();
+        JSONObject object = new JSONObject();
         reader.getNextTokenType();
         while (true) {
             TokenType type = reader.getCurrentTokenType();
@@ -127,7 +117,7 @@ public class JSONParser {
     }
 
     private JSONArray parseArray(JSONReader reader) throws ParseException {
-        JSONArray array = factory.newArray();
+        JSONArray array = new JSONArray();
         if (reader.getNextTokenType() == ARRAY_END)
             return array;
         while (true) {

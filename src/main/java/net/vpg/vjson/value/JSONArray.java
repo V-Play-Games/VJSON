@@ -28,11 +28,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
-    List<JSONValue> list;
+    private final List<JSONValue> list;
 
     public JSONArray() {
         this.list = new ArrayList<>();
@@ -74,6 +75,10 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
         return parse(new File(path));
     }
 
+    public static <T> Collector<T, ?, JSONArray> collector() {
+        return Collector.of(JSONArray::new, JSONArray::add, JSONArray::addAll);
+    }
+
     public int size() {
         return list.size();
     }
@@ -102,7 +107,8 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
     }
 
     public JSONArray addAll(JSONArray array) {
-        return addAll(array.list);
+        list.addAll(array.list);
+        return this;
     }
 
     public JSONArray remove(int index) {

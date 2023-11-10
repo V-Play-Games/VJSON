@@ -15,6 +15,19 @@
  */
 package net.vpg.vjson;
 
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
+
 public interface DeserializableValue {
     String deserialize();
+
+    default String toPrettyString() {
+        StringBuilder sb = new StringBuilder();
+        toPrettyString(new PrettyPrinter(new PrettyPrintConfig(), sb));
+        return sb.toString();
+    }
+
+    default void toPrettyString(PrettyPrinter printer) {
+        printer.print(deserialize());
+    }
 }

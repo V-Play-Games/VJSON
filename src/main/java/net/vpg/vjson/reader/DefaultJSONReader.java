@@ -52,7 +52,6 @@ public class DefaultJSONReader extends AbstractJSONReader {
             reader.checkToken("null");
             return null;
         }
-
     );
     private final boolean close;
     private final boolean isStringBased;
