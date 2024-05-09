@@ -102,12 +102,20 @@ public interface JSONContainer<T> {
         return get(t).toObject();
     }
 
+    default JSONObject getObject(T t, JSONObject def) {
+        return get(t, def, JSONValue::toObject);
+    }
+
     default Optional<JSONObject> optObject(T t) {
         return opt(t).map(JSONValue::toObject);
     }
 
     default JSONArray getArray(T t) {
         return get(t).toArray();
+    }
+
+    default JSONArray getArray(T t, JSONArray def) {
+        return get(t, def, JSONValue::toArray);
     }
 
     default Optional<JSONArray> optArray(T t) {

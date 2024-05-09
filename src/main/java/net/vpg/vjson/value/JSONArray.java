@@ -154,13 +154,11 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("[");
-        if (config.isArrayContentsOnSameLine()) {
-            if (config.isSpaceWithinBrackets())
-                printer.space();
-        } else {
+        if (!config.isArrayContentsOnSameLine()) {
             printer.incrementIndentLevel();
             printer.newLineAndIndent();
-        }
+        } else if (config.isSpaceWithinBrackets())
+            printer.space();
         Iterator<JSONValue> iterator = list.iterator();
         while (iterator.hasNext()) {
             iterator.next().toPrettyString(printer);
@@ -168,20 +166,17 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
                 if (config.isSpaceBeforeComma())
                     printer.space();
                 printer.print(",");
-                if (config.isArrayContentsOnSameLine()) {
-                    if (config.isSpaceAfterComma())
-                        printer.space();
-                } else
+                if (!config.isArrayContentsOnSameLine()) {
                     printer.newLineAndIndent();
+                } else if (config.isSpaceAfterComma())
+                    printer.space();
             }
         }
-        if (config.isArrayContentsOnSameLine()) {
-            if (config.isSpaceWithinBrackets())
-                printer.space();
-        } else {
+        if (!config.isArrayContentsOnSameLine()) {
             printer.decrementIndentLevel();
             printer.newLineAndIndent();
-        }
+        } else if (config.isSpaceWithinBrackets())
+            printer.space();
         printer.print("}");
     }
 }

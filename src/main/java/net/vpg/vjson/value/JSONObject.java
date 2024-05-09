@@ -23,8 +23,8 @@ import net.vpg.vjson.reader.JSONReader;
 
 import java.io.*;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -34,7 +34,7 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
     private final Map<String, JSONValue> map;
 
     public JSONObject() {
-        map = new HashMap<>();
+        map = new LinkedHashMap<>();
     }
 
     private JSONObject(Map<?, ?> map) {

@@ -44,7 +44,9 @@ public final class JSONString extends JSONValue {
     }
 
     public static String unescape(String s) {
-        return s == null || !s.contains("\\") ? s : s.replaceAll("\\\\b", "\b")
+        return s == null || !s.contains("\\")
+            ? s
+            : s.replaceAll("\\\\b", "\b")
             .replaceAll("\\\\\\\\", "\\")
             .replaceAll("\\\\/", "\\/")
             .replaceAll("\\\\\"", "\"")
