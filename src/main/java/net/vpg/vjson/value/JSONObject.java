@@ -71,10 +71,6 @@ public class JSONObject extends JSONValue implements SerializableObject, JSONCon
         return getParser().parse(s).toObject();
     }
 
-    public static JSONObject parseFile(String path) throws ParseException, FileNotFoundException {
-        return parse(new File(path));
-    }
-
     public static <T> Collector<T, ?, JSONObject> collector(Function<T, String> keyMapper, Function<T, ?> valueMapper) {
         return Collector.of(JSONObject::new,
             (obj, e) -> obj.put(keyMapper.apply(e), valueMapper.apply(e)),

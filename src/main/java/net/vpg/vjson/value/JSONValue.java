@@ -60,10 +60,6 @@ public abstract class JSONValue implements DeserializableValue {
         return getParser().parse(s);
     }
 
-    public static JSONValue parseFile(String path) throws ParseException, FileNotFoundException {
-        return parse(new File(path));
-    }
-
     @SuppressWarnings("rawtypes")
     public static JSONValue of(Object o) {
         if (o == null)

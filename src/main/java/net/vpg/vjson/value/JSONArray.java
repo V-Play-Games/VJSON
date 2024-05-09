@@ -72,10 +72,6 @@ public class JSONArray extends JSONValue implements SerializableArray, JSONConta
         return getParser().parse(s).toArray();
     }
 
-    public static JSONArray parseFile(String path) throws ParseException, FileNotFoundException {
-        return parse(new File(path));
-    }
-
     public static <T> Collector<T, ?, JSONArray> collector() {
         return Collector.of(JSONArray::new, JSONArray::add, JSONArray::addAll);
     }
