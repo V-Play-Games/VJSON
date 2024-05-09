@@ -17,7 +17,6 @@
 package net.vpg.vjson.reader;
 
 import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.parser.TokenType;
 
 public abstract class AbstractJSONReader implements JSONReader {
     protected Object currentToken;

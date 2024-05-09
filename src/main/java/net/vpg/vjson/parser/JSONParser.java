@@ -25,13 +25,13 @@ import net.vpg.vjson.value.JSONValue;
 import java.io.*;
 import java.net.URL;
 
-import static net.vpg.vjson.parser.TokenType.*;
+import static net.vpg.vjson.reader.JSONReader.TokenType.*;
 
 /**
  * A parser which parses JSON from a pre-configured {@linkplain JSONReader}.
  * This parser reads tokens through a {@link JSONReader}, which may be passed as a method parameter or
  * constructed from the given arguments.
- * All {@code parse} methods have an overriden method
+ * All {@code parse} methods have an overrode method
  *
  * @author Vaibhav Nargwani
  */
@@ -97,7 +97,7 @@ public class JSONParser {
         JSONObject object = new JSONObject();
         reader.getNextTokenType();
         while (true) {
-            TokenType type = reader.getCurrentTokenType();
+            JSONReader.TokenType type = reader.getCurrentTokenType();
             if (type == OBJECT_END)
                 return object;
             if (type != STRING)

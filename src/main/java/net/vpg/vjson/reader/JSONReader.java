@@ -17,7 +17,6 @@
 package net.vpg.vjson.reader;
 
 import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.parser.TokenType;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -40,5 +39,9 @@ public interface JSONReader extends Closeable {
 
     default void error() throws ParseException {
         throw new ParseException(getPosition(), String.valueOf(getCurrentToken()));
+    }
+
+    enum TokenType {
+        EOF, NUMBER, STRING, TRUE, FALSE, NULL, OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, COMMA, COLON
     }
 }

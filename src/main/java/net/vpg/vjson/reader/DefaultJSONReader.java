@@ -17,14 +17,13 @@
 package net.vpg.vjson.reader;
 
 import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.parser.TokenType;
 
 import java.io.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
 
-import static net.vpg.vjson.parser.TokenType.*;
+import static net.vpg.vjson.reader.JSONReader.TokenType.*;
 
 public class DefaultJSONReader extends AbstractJSONReader {
     private static final Map<Character, TokenType> typeMap = Map.of(
@@ -106,15 +105,8 @@ public class DefaultJSONReader extends AbstractJSONReader {
                 return false;
             }
             // it is unlikely but not impossible that we read 0 characters, but not at the end of reader
-            if (numRead == 0) {
-                int c = reader.read();
-                if (c == -1) {
-                    return true;
-                } else {
-                    buffer[lastPos++] = (char) c;
-                    return false;
-                }
-            }
+            if (numRead == 0)
+                return buffer();
         } catch (IOException exc) {
             throw new ParseException(position, exc);
         }
@@ -123,9 +115,8 @@ public class DefaultJSONReader extends AbstractJSONReader {
     }
 
     private char nextChar() {
-        if (isEOF()) {
+        if (isEOF())
             error();
-        }
         return buffer[++position];
     }
 
@@ -136,73 +127,36 @@ public class DefaultJSONReader extends AbstractJSONReader {
     }
 
     private boolean isEOF() {
-        if (lastPos - position == 1) {
-            if (isStringBased) {
-                return true;
-            } else {
-                buffer[0] = buffer[lastPos - 1];
-                position = -1;
-                lastPos = 1;
-                return buffer();
-            }
-        }
-        return false;
+        if (position + 1 != lastPos)
+            return false;
+        if (isStringBased)
+            return true;
+        buffer[0] = buffer[lastPos - 1];
+        position = -1;
+        lastPos = 1;
+        return buffer();
     }
 
     protected TokenType getNextTokenType0() {
-        if (isEOF()) return EOF;
+        if (isEOF())
+            return EOF;
         char c = nextChar();
-        TokenType type = typeMap.get(c);
-        currentToken = tokenMap.getOrDefault(c, r -> c).apply(this);
         if (Character.isDigit(c) || c == '-') {
             currentToken = getNumber();
             return NUMBER;
         }
-        if (c == ' ' || c == '\0' || c == '\t' || c == '\r' || c == '\n')
+        currentToken = tokenMap.getOrDefault(c, r -> c).apply(this);
+        if (" \0\t\r\n".indexOf(c) >= 0)
             return getNextTokenType0();
-        if (type == null) error();
+        TokenType type = typeMap.get(c);
+        if (type == null)
+            error();
         return type;
     }
 
     private String getString() {
-        boolean backslashMode = false;
         while (true) {
             char c = nextChar();
-            if (backslashMode) {
-                switch (c) {
-                    case '"':
-                        append('\"');
-                        break;
-                    case '\\':
-                        append('\\');
-                        break;
-                    case '/':
-                        append('/');
-                        break;
-                    case 'b':
-                        append('\b');
-                        break;
-                    case 'f':
-                        append('\f');
-                        break;
-                    case 'n':
-                        append('\n');
-                        break;
-                    case 'r':
-                        append('\r');
-                        break;
-                    case 't':
-                        append('\t');
-                        break;
-                    case 'u':
-                        append((char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar()));
-                        break;
-                    default:
-                        error();
-                }
-                c = nextChar();
-                backslashMode = false;
-            }
             switch (c) {
                 case '\b':
                 case '\f':
@@ -210,13 +164,41 @@ public class DefaultJSONReader extends AbstractJSONReader {
                 case '\r':
                 case '\t':
                     error();
-                case '\\':
-                    backslashMode = true;
-                    continue;
                 case '"':
                     return getBuilderString();
+                case '\\':
+                    switch (nextChar()) {
+                        case '"':
+                            c = '\"';
+                            break;
+                        case '\\':
+                            break;
+                        case '/':
+                            c = '/';
+                            break;
+                        case 'b':
+                            c = '\b';
+                            break;
+                        case 'f':
+                            c = '\f';
+                            break;
+                        case 'n':
+                            c = '\n';
+                            break;
+                        case 'r':
+                            c = '\r';
+                            break;
+                        case 't':
+                            c = '\t';
+                            break;
+                        case 'u':
+                            c = (char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar());
+                            break;
+                        default:
+                            error();
+                    }
                 default:
-                    append(c);
+                    builder.append(c);
             }
         }
     }
@@ -230,20 +212,16 @@ public class DefaultJSONReader extends AbstractJSONReader {
     private Number getNumber() {
         position--;
         char c;
-        while (Character.isDigit(c = nextChar()) || c == '.' || c == '+' || c == '-' || c == 'e' || c == 'E') {
-            append(c);
+        while ("0123456789.+-eE".indexOf(c = nextChar()) >= 0) {
+            builder.append(c);
         }
         position--;
         String s = getBuilderString();
-        // Don't use ternary to avoid casting to Double sometimes
-        if (s.contains(".") || s.contains("e") || s.contains("E"))
+        // Don't use ternary to avoid casting to Double
+        if (s.contains("."))
             return Double.parseDouble(s);
         else
             return Long.parseLong(s);
-    }
-
-    private void append(char c) {
-        builder.append(c);
     }
 
     private String getBuilderString() {
