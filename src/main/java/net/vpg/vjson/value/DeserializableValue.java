@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.vpg.vjson;
+
+package net.vpg.vjson.value;
 
 import net.vpg.vjson.pretty.PrettyPrintConfig;
 import net.vpg.vjson.pretty.PrettyPrinter;
