@@ -25,7 +25,7 @@ public final class JSONString extends JSONValue {
 
     public static JSONString of(String value) {
         if (value == null)
-            throw new NullPointerException("value should not be null");
+            throw new IllegalArgumentException("value should not be null");
         return new JSONString(value);
     }
 

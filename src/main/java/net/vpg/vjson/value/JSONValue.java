@@ -98,23 +98,19 @@ public abstract class JSONValue implements DeserializableValue {
     }
 
     public boolean toBoolean() {
-        thr(Type.BOOLEAN);
-        return false;
+        return error(Type.BOOLEAN);
     }
 
     public Number toNumber() {
-        thr(Type.NUMBER);
-        return null;
+        return error(Type.NUMBER);
     }
 
     public JSONObject toObject() {
-        thr(Type.OBJECT);
-        return null;
+        return error(Type.OBJECT);
     }
 
     public JSONArray toArray() {
-        thr(Type.ARRAY);
-        return null;
+        return error(Type.ARRAY);
     }
 
     public int toInt() {
@@ -138,7 +134,7 @@ public abstract class JSONValue implements DeserializableValue {
         return deserialize();
     }
 
-    private void thr(Type type) {
+    private <T> T error(Type type) {
         throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + type);
     }
 

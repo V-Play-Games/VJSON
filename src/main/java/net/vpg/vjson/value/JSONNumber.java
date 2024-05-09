@@ -24,6 +24,8 @@ public final class JSONNumber extends JSONValue {
     }
 
     public static JSONNumber of(Number value) {
+        if (value == null)
+            throw new IllegalArgumentException("value should not be null");
         return new JSONNumber(value);
     }
 
