@@ -16,7 +16,6 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.SerializableArray;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.pretty.PrettyPrintConfig;
 import net.vpg.vjson.pretty.PrettyPrinter;
@@ -33,7 +32,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
+public final class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
     private final List<JSONValue> list;
 
     public JSONArray() {

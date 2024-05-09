@@ -16,9 +16,6 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.DeserializableValue;
-import net.vpg.vjson.SerializableArray;
-import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.JSONParser;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.reader.JSONReader;

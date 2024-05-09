@@ -16,7 +16,6 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.SerializableObject;
 import net.vpg.vjson.parser.ParseException;
 import net.vpg.vjson.pretty.PrettyPrintConfig;
 import net.vpg.vjson.pretty.PrettyPrinter;
@@ -31,7 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-public class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
+public final class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
     private final Map<String, JSONValue> map;
 
     public JSONObject() {
