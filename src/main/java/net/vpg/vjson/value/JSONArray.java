@@ -150,7 +150,7 @@ public final class JSONArray extends JSONValue implements SerializableArray, JSO
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("[");
-        if (!config.isArrayContentsOnSameLine()) {
+        if (config.isArrayContentsOnNewLine()) {
             printer.incrementIndentLevel();
             printer.newLineAndIndent();
         } else if (config.isSpaceWithinBrackets())
@@ -162,17 +162,17 @@ public final class JSONArray extends JSONValue implements SerializableArray, JSO
                 if (config.isSpaceBeforeComma())
                     printer.space();
                 printer.print(",");
-                if (!config.isArrayContentsOnSameLine()) {
+                if (config.isArrayContentsOnNewLine()) {
                     printer.newLineAndIndent();
                 } else if (config.isSpaceAfterComma())
                     printer.space();
             }
         }
-        if (!config.isArrayContentsOnSameLine()) {
+        if (config.isArrayContentsOnNewLine()) {
             printer.decrementIndentLevel();
             printer.newLineAndIndent();
         } else if (config.isSpaceWithinBrackets())
             printer.space();
-        printer.print("}");
+        printer.print("]");
     }
 }

@@ -24,8 +24,8 @@ public class PrettyPrintConfig {
     private boolean spaceAfterComma = true;
     private boolean spaceBeforeColon = false;
     private boolean spaceAfterColon = true;
-    private boolean arrayContentsOnSameLine = false;
-    private boolean objectContentsOnSameLine = false;
+    private boolean arrayContentsOnNewLine = true;
+    private boolean objectContentsOnNewLine = true;
 
     public String getIndent() {
         return indent;
@@ -90,21 +90,21 @@ public class PrettyPrintConfig {
         return this;
     }
 
-    public boolean isArrayContentsOnSameLine() {
-        return arrayContentsOnSameLine;
+    public boolean isArrayContentsOnNewLine() {
+        return arrayContentsOnNewLine;
     }
 
-    public PrettyPrintConfig setArrayContentsOnSameLine(boolean arrayContentsOnSameLine) {
-        this.arrayContentsOnSameLine = arrayContentsOnSameLine;
+    public PrettyPrintConfig setArrayContentsOnNewLine(boolean arrayContentsOnNewLine) {
+        this.arrayContentsOnNewLine = arrayContentsOnNewLine;
         return this;
     }
 
-    public boolean isObjectContentsOnSameLine() {
-        return objectContentsOnSameLine;
+    public boolean isObjectContentsOnNewLine() {
+        return objectContentsOnNewLine;
     }
 
-    public PrettyPrintConfig setObjectContentsOnSameLine(boolean objectContentsOnSameLine) {
-        this.objectContentsOnSameLine = objectContentsOnSameLine;
+    public PrettyPrintConfig setObjectContentsOnNewLine(boolean objectContentsOnNewLine) {
+        this.objectContentsOnNewLine = objectContentsOnNewLine;
         return this;
     }
 }

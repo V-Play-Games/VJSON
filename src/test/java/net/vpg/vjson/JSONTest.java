@@ -33,4 +33,23 @@ class JSONTest {
     void checkCorrectParse() throws IOException {
         Assertions.assertEquals(obj.toString(), JSONObject.parse(url).toString());
     }
+
+    @Test
+    void checkCorrectPrettyPrint() {
+        Assertions.assertEquals("""
+            {
+              "\\"STRING\\"": "Unicode: ꯍ, \\r\\n\\f\\b\\\\\\"",
+              "NUMBERS": {
+                "INT": 123,
+                "NEGATIVE": -123,
+                "LONG": 1234567890,
+                "DOUBLE1": 1.01,
+                "DOUBLE2": 1.01E-5
+              },
+              "BOOLEAN": true,
+              "ARRAY": [
+                null
+              ]
+            }""", obj.toPrettyString());
+    }
 }

@@ -37,7 +37,7 @@ public interface JSONReader extends Closeable {
             error();
     }
 
-    default void error() throws ParseException {
+    default <T> T error() throws ParseException {
         throw new ParseException(getPosition(), String.valueOf(getCurrentToken()));
     }
 

@@ -143,7 +143,7 @@ public final class JSONObject extends JSONValue implements SerializableObject, J
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("{");
-        if (!config.isObjectContentsOnSameLine()) {
+        if (config.isObjectContentsOnNewLine()) {
             printer.incrementIndentLevel();
             printer.newLineAndIndent();
         } else if (config.isSpaceWithinBraces())
@@ -151,7 +151,7 @@ public final class JSONObject extends JSONValue implements SerializableObject, J
         Iterator<Map.Entry<String, JSONValue>> iterator = map.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, JSONValue> next = iterator.next();
-            printer.print("\"" + next.getKey() + "\"");
+            printer.print("\"" + JSONString.escape(next.getKey()) + "\"");
             if (config.isSpaceBeforeColon())
                 printer.space();
             printer.print(":");
@@ -162,13 +162,13 @@ public final class JSONObject extends JSONValue implements SerializableObject, J
                 if (config.isSpaceBeforeComma())
                     printer.space();
                 printer.print(",");
-                if (!config.isObjectContentsOnSameLine())
+                if (config.isObjectContentsOnNewLine())
                     printer.newLineAndIndent();
                 else if (config.isSpaceAfterComma())
                     printer.space();
             }
         }
-        if (!config.isObjectContentsOnSameLine()) {
+        if (config.isObjectContentsOnNewLine()) {
             printer.decrementIndentLevel();
             printer.newLineAndIndent();
         } else if (config.isSpaceWithinBraces())

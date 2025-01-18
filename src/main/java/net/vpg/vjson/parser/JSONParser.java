@@ -77,20 +77,12 @@ public class JSONParser {
     private JSONValue parseValue(JSONReader reader) throws ParseException {
         if (reader.getCurrentTokenType() == null)
             reader.getNextTokenType();
-        switch (reader.getCurrentTokenType()) {
-            default:
-                reader.error();
-            case STRING:
-            case TRUE:
-            case FALSE:
-            case NULL:
-            case NUMBER:
-                return JSONValue.of(reader.getCurrentToken());
-            case OBJECT_START:
-                return parseObject(reader);
-            case ARRAY_START:
-                return parseArray(reader);
-        }
+        return switch (reader.getCurrentTokenType()) {
+            case STRING, TRUE, FALSE, NULL, NUMBER -> JSONValue.of(reader.getCurrentToken());
+            case OBJECT_START -> parseObject(reader);
+            case ARRAY_START -> parseArray(reader);
+            default -> reader.error();
+        };
     }
 
     private JSONObject parseObject(JSONReader reader) throws ParseException {

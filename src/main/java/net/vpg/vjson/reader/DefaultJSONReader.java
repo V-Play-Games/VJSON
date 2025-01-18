@@ -167,36 +167,19 @@ public class DefaultJSONReader extends AbstractJSONReader {
                 case '"':
                     return getBuilderString();
                 case '\\':
-                    switch (nextChar()) {
-                        case '"':
-                            c = '\"';
-                            break;
-                        case '\\':
-                            break;
-                        case '/':
-                            c = '/';
-                            break;
-                        case 'b':
-                            c = '\b';
-                            break;
-                        case 'f':
-                            c = '\f';
-                            break;
-                        case 'n':
-                            c = '\n';
-                            break;
-                        case 'r':
-                            c = '\r';
-                            break;
-                        case 't':
-                            c = '\t';
-                            break;
-                        case 'u':
-                            c = (char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar());
-                            break;
-                        default:
-                            error();
-                    }
+                    c = switch (nextChar()) {
+                        case '"' -> '\"';
+                        case '\\' -> '\\';
+                        case '/' -> '/';
+                        case 'b' -> '\b';
+                        case 'f' -> '\f';
+                        case 'n' -> '\n';
+                        case 'r' -> '\r';
+                        case 't' -> '\t';
+                        case 'u' ->
+                            (char) (nextHexChar() << 12 | nextHexChar() << 8 | nextHexChar() << 4 | nextHexChar());
+                        default -> error();
+                    };
                 default:
                     builder.append(c);
             }

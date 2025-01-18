@@ -59,28 +59,19 @@ public abstract class JSONValue implements DeserializableValue {
 
     @SuppressWarnings("rawtypes")
     public static JSONValue of(Object o) {
-        if (o == null)
-            return JSONNull.getInstance();
-        else if (o instanceof JSONValue)
-            return (JSONValue) o;
-        else if (o instanceof List)
-            return JSONArray.of((List) o);
-        else if (o instanceof Map)
-            return JSONObject.of((Map) o);
-        else if (o instanceof String)
-            return JSONString.of((String) o);
-        else if (o instanceof Number)
-            return JSONNumber.of((Number) o);
-        else if (o instanceof Boolean)
-            return JSONBoolean.of((boolean) o);
-        else if (o instanceof SerializableArray)
-            return ((SerializableArray) o).toArray();
-        else if (o instanceof SerializableObject)
-            return ((SerializableObject) o).toObject();
-        else if (o instanceof DeserializableValue)
-            return parse(((DeserializableValue) o).deserialize());
-        else
-            throw new UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass());
+        return switch (o) {
+            case null -> JSONNull.getInstance();
+            case JSONValue value -> value;
+            case List list -> JSONArray.of(list);
+            case Map map -> JSONObject.of(map);
+            case String s -> JSONString.of(s);
+            case Number number -> JSONNumber.of(number);
+            case Boolean b -> JSONBoolean.of((boolean) o);
+            case SerializableArray arr -> arr.toArray();
+            case SerializableObject obj -> obj.toObject();
+            case DeserializableValue value -> parse(value.deserialize());
+            default -> throw new UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass());
+        };
     }
 
     public abstract Type getType();

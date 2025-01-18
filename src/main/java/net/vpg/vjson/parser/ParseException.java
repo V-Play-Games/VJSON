@@ -37,6 +37,9 @@ public class ParseException extends RuntimeException {
         this.token = null;
     }
 
+    /**
+     * @return The type of the exception.
+     */
     public int getType() {
         return type;
     }

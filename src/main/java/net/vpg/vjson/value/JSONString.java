@@ -39,37 +39,47 @@ public final class JSONString extends JSONValue {
     }
 
     public static String escape(char c) {
-        switch (c) {
-            case '\\':
-                return "\\\\";
-            case '\b':
-                return "\\b";
-            case '\f':
-                return "\\f";
-            case '\n':
-                return "\\n";
-            case '\r':
-                return "\\r";
-            case '\t':
-                return "\\t";
-            case '/':
-                return "\\/";
-            default:
-                return Character.toString(c);
-        }
+        return switch (c) {
+            case '\\' -> "\\\\";
+            case '\b' -> "\\b";
+            case '\f' -> "\\f";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            case '"' -> "\\\"";
+            case '/' -> "\\/";
+            default -> Character.toString(c);
+        };
     }
 
     public static String unescape(String s) {
-        return s == null || !s.contains("\\")
-            ? s
-            : s.replaceAll("\\\\b", "\b")
-            .replaceAll("\\\\\\\\", "\\")
-            .replaceAll("\\\\/", "\\/")
-            .replaceAll("\\\\\"", "\"")
-            .replaceAll("\\\\f", "\f")
-            .replaceAll("\\\\n", "\n")
-            .replaceAll("\\\\r", "\r")
-            .replaceAll("\\\\t", "\t");
+        if (s == null || !s.contains("\\")) {
+            return s;
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c != '\\' || i + 1 == s.length()) {
+                result.append(c);
+                continue;
+            }
+            char next = s.charAt(i + 1);
+            switch (next) {
+                case '\\' -> result.append('\\');
+                case '/' -> result.append('/');
+                case '"' -> result.append('"');
+                case 'b' -> result.append('\b');
+                case 'f' -> result.append('\f');
+                case 'n' -> result.append('\n');
+                case 'r' -> result.append('\r');
+                case 't' -> result.append('\t');
+                default -> result.append(c).append(next);
+            }
+            i++;
+        }
+
+        return result.toString();
     }
 
     @Override
