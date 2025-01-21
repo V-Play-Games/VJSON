@@ -57,6 +57,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
     private final boolean isStringBased;
     private StringBuilder builder = new StringBuilder();
     private Reader reader;
+    private int totalPos = -1;
     private int position = -1;
     private int lastPos;
     private char[] buffer;
@@ -98,42 +99,38 @@ public class DefaultJSONReader extends AbstractJSONReader {
 
     private boolean buffer() {
         try {
-            // fill the buffer with new input
-            int numRead = reader.read(buffer, lastPos, buffer.length - lastPos);
-            if (numRead > 0) {
-                lastPos = numRead;
-                return false;
+            position = -1;
+            int numRead = reader.read(buffer, 0, buffer.length);
+            if (numRead == -1) {
+                return true;
             }
-            // it is unlikely but not impossible that we read 0 characters, but not at the end of reader
-            if (numRead == 0)
-                return buffer();
+            lastPos = numRead;
+            return false;
         } catch (IOException exc) {
             throw new ParseException(position, exc);
         }
-        // End of File
-        return true;
     }
 
     private char nextChar() {
         if (isEOF())
             error();
+        ++totalPos;
         return buffer[++position];
     }
 
     @Override
     public int getPosition() {
         checkOpen();
-        return position;
+        return totalPos;
+    }
+
+    private void decrementPosition() {
+        totalPos--;
+        position--;
     }
 
     private boolean isEOF() {
-        if (position + 1 != lastPos)
-            return false;
-        if (isStringBased)
-            return true;
-        position = -1;
-        lastPos = 0;
-        return buffer();
+        return position + 1 == lastPos && (isStringBased || buffer());
     }
 
     protected TokenType getNextTokenType0() {
@@ -192,12 +189,12 @@ public class DefaultJSONReader extends AbstractJSONReader {
     }
 
     private Number getNumber() {
-        position--;
+        decrementPosition();
         char c;
         while ("0123456789.+-eE".indexOf(c = nextChar()) >= 0) {
             builder.append(c);
         }
-        position--;
+        decrementPosition();
         String s = getBuilderString();
         // Don't use ternary to avoid casting to Double
         if (s.contains("."))
@@ -213,7 +210,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
     }
 
     private void checkToken(String token) {
-        position--;
+        decrementPosition();
         for (int i = 0; i < token.length(); i++)
             if (token.charAt(i) != nextChar())
                 error();
@@ -223,6 +220,7 @@ public class DefaultJSONReader extends AbstractJSONReader {
     public void close() throws IOException {
         if (lastPos == -1) return;
         lastPos = -1;
+        totalPos = 0;
         position = 0;
         currentTokenType = null;
         builder = null;
