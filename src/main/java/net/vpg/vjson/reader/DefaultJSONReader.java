@@ -131,9 +131,8 @@ public class DefaultJSONReader extends AbstractJSONReader {
             return false;
         if (isStringBased)
             return true;
-        buffer[0] = buffer[lastPos - 1];
         position = -1;
-        lastPos = 1;
+        lastPos = 0;
         return buffer();
     }
 
