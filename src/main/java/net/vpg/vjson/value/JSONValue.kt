@@ -100,8 +100,8 @@ abstract class JSONValue : DeserializableValue {
         }
 
         @Throws(ParseException::class)
-        fun parse(s: String): JSONValue? {
-            return parser!!.parse(s)
+        fun parse(s: String): JSONValue {
+            return parser!!.parse(s)!!
         }
 
         @Throws(ParseException::class, FileNotFoundException::class)
@@ -114,7 +114,7 @@ abstract class JSONValue : DeserializableValue {
             return parser!!.parse(s)
         }
 
-        fun of(o: Any?): JSONValue? {
+        fun of(o: Any?): JSONValue {
             return when (o) {
                 null -> JSONNull.Companion.instance
                 is JSONValue -> o

@@ -19,7 +19,7 @@ import net.vpg.vjson.pretty.PrettyPrinter
 import java.util.function.Consumer
 
 interface DeserializableValue {
-    fun deserialize(): String?
+    fun deserialize(): String
 
     fun toPrettyString(): String {
         val sb = StringBuilder()

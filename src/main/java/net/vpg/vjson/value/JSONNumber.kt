@@ -27,7 +27,7 @@ class JSONNumber private constructor(private val value: Number) : JSONValue() {
         return value
     }
 
-    override fun deserialize(): String? {
+    override fun deserialize(): String {
         return value.toString()
     }
 

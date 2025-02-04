@@ -15,7 +15,6 @@
  */
 package net.vpg.vjson.parser
 
-import net.vpg.vjson.reader.DefaultJSONReader
 import net.vpg.vjson.reader.JSONReader
 import net.vpg.vjson.reader.JSONReader.TokenType
 import net.vpg.vjson.value.JSONArray
@@ -35,27 +34,27 @@ import java.net.URL
 class JSONParser {
     @Throws(ParseException::class)
     fun parse(s: String): JSONValue? {
-        return parse(DefaultJSONReader(s), true)
+        return parse(JSONReader(s), true)
     }
 
     @Throws(ParseException::class, FileNotFoundException::class)
     fun parse(f: File): JSONValue? {
-        return parse(DefaultJSONReader(f), true)
+        return parse(JSONReader(f), true)
     }
 
     @Throws(ParseException::class, IOException::class)
     fun parse(url: URL): JSONValue? {
-        return parse(DefaultJSONReader(url), true)
+        return parse(JSONReader(url), true)
     }
 
     @Throws(ParseException::class)
     fun parse(stream: InputStream): JSONValue? {
-        return parse(DefaultJSONReader(stream), true)
+        return parse(JSONReader(stream), true)
     }
 
     @Throws(ParseException::class)
     fun parse(reader: Reader?): JSONValue? {
-        return parse(DefaultJSONReader(reader), true)
+        return parse(JSONReader(reader), true)
     }
 
     @JvmOverloads

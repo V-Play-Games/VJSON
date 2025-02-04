@@ -15,7 +15,6 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.JSONParser.parse
 import net.vpg.vjson.parser.ParseException
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
@@ -43,7 +42,7 @@ import kotlin.sequences.map
 import kotlin.text.iterator
 import kotlin.text.map
 
-class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.String?> {
+class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.String> {
     private val map: MutableMap<String?, JSONValue?>
 
     init {
@@ -61,7 +60,7 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
     val isEmpty: Boolean
         get() = map.isEmpty()
 
-    override fun get(key: String?): JSONValue? {
+    override fun get(key: String): JSONValue {
         return JSONValue.Companion.of(map.get(key))
     }
 
@@ -95,26 +94,23 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
 
     override fun deserialize(): kotlin.String {
         return map.entries
-            .stream()
-            .map<kotlin.String?>(Function { e: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? ->
-                "\"" + JSONString.Companion.escape(
-                    e?.key
-                ) + "\":" + e?.value?.deserialize()
-            })
-            .collect(Collectors.joining(",", "{", "}"))
+                .stream()
+                .map<kotlin.String?>(Function { e: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? ->
+                    "\"" + JSONString.Companion.escape(
+                            e?.key
+                    ) + "\":" + e?.value?.deserialize()
+                })
+                .collect(Collectors.joining(",", "{", "}"))
     }
 
-    override fun getType(): Type {
-        return Type.OBJECT
-    }
-
-    override fun getRaw(): Any {
-        return map.entrySet().stream().collect(
-            Collectors.toMap(
-                Function { Map.Entry.getKey() },
-                Function { entry: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? -> entry?.value?.raw })
+    override val type: Type?
+        get() = Type.OBJECT
+    override val raw: Any?
+        get() = map.entries.stream().collect(
+                Collectors.toMap(
+                        Function { it.key },
+                        Function { entry: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? -> entry?.value?.raw })
         )
-    }
 
     override fun toObject(): JSONObject {
         return this

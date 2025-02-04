@@ -38,7 +38,7 @@ class JSONBoolean private constructor(private val value: Boolean) : JSONValue() 
             return FALSE
         }
 
-        fun of(value: Boolean): JSONBoolean? {
+        fun of(value: Boolean): JSONBoolean {
             return if (value) TRUE else FALSE
         }
     }

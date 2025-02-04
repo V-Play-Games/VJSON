@@ -35,7 +35,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
         this.list = ArrayList<JSONValue?>()
     }
 
-    private constructor(list: MutableList<*>) {
+    private constructor(list: List<*>) {
         this.list = list.stream().map<JSONValue?> { o: Any? -> JSONValue.Companion.of(o) }.collect(Collectors.toList())
     }
 
@@ -119,7 +119,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
     }
 
     companion object {
-        fun of(list: MutableList<*>): JSONArray {
+        fun of(list: List<*>): JSONArray {
             return JSONArray(list)
         }
 
@@ -134,7 +134,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
         }
 
         @Throws(ParseException::class)
-        fun parse(`in`: InputStream?): JSONArray? {
+        fun parse(`in`: InputStream): JSONArray? {
             return JSONValue.Companion.parser?.parse(`in`)?.toArray()
         }
 
@@ -144,7 +144,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
         }
 
         @Throws(ParseException::class, FileNotFoundException::class)
-        fun parse(f: File?): JSONArray? {
+        fun parse(f: File): JSONArray? {
             return JSONValue.Companion.parser?.parse(f)?.toArray()
         }
 
