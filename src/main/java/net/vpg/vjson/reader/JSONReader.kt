@@ -41,7 +41,7 @@ interface JSONReader : Closeable {
     }
 
     @Throws(ParseException::class)
-    fun <T> error(): T? {
+    fun <T> error(): T {
         throw ParseException(this.position, String.valueOf(this.currentToken))
     }
 

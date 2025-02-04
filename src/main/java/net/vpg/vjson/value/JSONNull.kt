@@ -16,13 +16,8 @@
 package net.vpg.vjson.value
 
 class JSONNull private constructor() : JSONValue() {
-    override fun getType(): Type {
-        return Type.NULL
-    }
-
-    override fun getRaw(): Any? {
-        return null
-    }
+    override val type=Type.NULL
+    override val raw=null
 
     override fun equals(o: Any?): Boolean {
         return o is JSONNull
@@ -32,9 +27,7 @@ class JSONNull private constructor() : JSONValue() {
         return 0
     }
 
-    override fun isNull(): Boolean {
-        return true
-    }
+    override val isNull = true
 
     override fun deserialize(): String {
         return "null"

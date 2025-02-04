@@ -39,7 +39,7 @@ class JSONParser {
     }
 
     @Throws(ParseException::class, FileNotFoundException::class)
-    fun parse(f: File?): JSONValue? {
+    fun parse(f: File): JSONValue? {
         return parse(DefaultJSONReader(f), true)
     }
 
@@ -49,7 +49,7 @@ class JSONParser {
     }
 
     @Throws(ParseException::class)
-    fun parse(stream: InputStream?): JSONValue? {
+    fun parse(stream: InputStream): JSONValue? {
         return parse(DefaultJSONReader(stream), true)
     }
 

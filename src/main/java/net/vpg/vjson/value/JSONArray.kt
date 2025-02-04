@@ -15,7 +15,6 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.JSONParser.parse
 import net.vpg.vjson.parser.ParseException
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
@@ -29,7 +28,7 @@ import java.util.stream.Collector
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
-class JSONArray : JSONValue, SerializableArray, JSONContainer<Int?> {
+class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
     private val list: MutableList<JSONValue?>
 
     constructor() {
@@ -47,8 +46,8 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int?> {
     val isEmpty: Boolean
         get() = list.isEmpty()
 
-    override fun get(index: Int): JSONValue? {
-        return JSONValue.Companion.of(list.get(index))
+    override fun get(t: Int): JSONValue {
+        return JSONValue.Companion.of(list.get(t))!!
     }
 
     fun add(index: Int, value: Any?): JSONArray {
@@ -95,31 +94,27 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int?> {
             .collect(Collectors.joining(",", "[", "]"))
     }
 
-    override fun getType(): Type {
-        return Type.ARRAY
-    }
-
-    override fun getRaw(): Any {
-        return list.stream().map<Any?> { obj: JSONValue? -> obj!!.getRaw() }.collect(Collectors.toList())
-    }
+    override val type=Type.ARRAY
+    override val raw: Any?
+        get() = list.stream().map<Any?> { obj: JSONValue? -> obj!!.raw }.collect(Collectors.toList())
 
     override fun toArray(): JSONArray {
         return this
     }
 
     override fun toPrettyString(printer: PrettyPrinter) {
-        val config = printer.getConfig()
+        val config = printer.config
         printer.print("[")
-        printer.nextLine(config.isArrayContentsOnNewLine(), +1, config.isSpaceWithinBrackets())
+        printer.nextLine(config.isArrayContentsOnNewLine, +1, config.isSpaceWithinBrackets)
         val iterator = list.iterator()
         while (iterator.hasNext()) {
             iterator.next()!!.toPrettyString(printer)
             if (!iterator.hasNext()) break
-            printer.spaceIf(config.isSpaceBeforeComma())
+            printer.spaceIf(config.isSpaceBeforeComma)
             printer.print(",")
-            printer.nextLine(config.isArrayContentsOnNewLine(), 0, config.isSpaceAfterComma())
+            printer.nextLine(config.isArrayContentsOnNewLine, 0, config.isSpaceAfterComma)
         }
-        printer.nextLine(config.isArrayContentsOnNewLine(), -1, config.isSpaceWithinBrackets())
+        printer.nextLine(config.isArrayContentsOnNewLine, -1, config.isSpaceWithinBrackets)
         printer.print("]")
     }
 
@@ -130,32 +125,32 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int?> {
 
         @Throws(ParseException::class)
         fun parse(`in`: Reader?): JSONArray? {
-            return JSONValue.Companion.getParser().parse(`in`).toArray()
+            return JSONValue.Companion.parser?.parse(`in`)?.toArray()
         }
 
         @Throws(ParseException::class, IOException::class)
         fun parse(url: URL): JSONArray? {
-            return JSONValue.Companion.getParser().parse(url).toArray()
+            return JSONValue.Companion.parser?.parse(url)?.toArray()
         }
 
         @Throws(ParseException::class)
         fun parse(`in`: InputStream?): JSONArray? {
-            return JSONValue.Companion.getParser().parse(`in`).toArray()
+            return JSONValue.Companion.parser?.parse(`in`)?.toArray()
         }
 
         @Throws(ParseException::class)
         fun parse(s: String): JSONArray? {
-            return JSONValue.Companion.getParser().parse(s).toArray()
+            return JSONValue.Companion.parser?.parse(s)?.toArray()
         }
 
         @Throws(ParseException::class, FileNotFoundException::class)
         fun parse(f: File?): JSONArray? {
-            return JSONValue.Companion.getParser().parse(f).toArray()
+            return JSONValue.Companion.parser?.parse(f)?.toArray()
         }
 
         @Throws(ParseException::class)
         fun parse(s: JSONReader): JSONArray? {
-            return JSONValue.Companion.getParser().parse(s).toArray()
+            return JSONValue.Companion.parser?.parse(s)?.toArray()
         }
 
         fun <T> collector(): Collector<T?, *, JSONArray?> {

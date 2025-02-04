@@ -16,15 +16,10 @@
 package net.vpg.vjson.value
 
 class JSONBoolean private constructor(private val value: Boolean) : JSONValue() {
-    override fun getType(): Type {
-        return Type.BOOLEAN
-    }
+    override val type=Type.BOOLEAN
+    override val raw=value
 
     override fun toBoolean(): Boolean {
-        return value
-    }
-
-    override fun getRaw(): Any {
         return value
     }
 

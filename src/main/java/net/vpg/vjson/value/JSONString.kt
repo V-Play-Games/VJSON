@@ -16,16 +16,12 @@
 package net.vpg.vjson.value
 
 class JSONString private constructor(private val value: String?) : JSONValue() {
-    override fun getType(): Type {
-        return Type.STRING
-    }
+
+    override val type= Type.STRING
+    override val raw=value
 
     override fun toString(): String {
         return value!!
-    }
-
-    override fun getRaw(): Any? {
-        return value
     }
 
     override fun deserialize(): String {
@@ -38,13 +34,13 @@ class JSONString private constructor(private val value: String?) : JSONValue() {
             return JSONString(value)
         }
 
-        fun escape(s: String?): String {
+        fun escape(s: String?): String? {
             if (s == null) return null
-            val builder: StringBuilder = StringBuilder(s.length())
+            val builder: StringBuilder = StringBuilder(s.length)
             var i = 0
-            val len: Int = s.length()
+            val len: Int = s.length
             while (i < len) {
-                builder.append(Companion.escape(s.charAt(i)))
+                builder.append(Companion.escape(s[i]))
                 i++
             }
             return builder.toString()
@@ -54,7 +50,7 @@ class JSONString private constructor(private val value: String?) : JSONValue() {
             return when (c) {
                 '\\' -> "\\\\"
                 '\b' -> "\\b"
-                '\f' -> "\\f"
+                '\u000c' -> "\\f"
                 '\n' -> "\\n"
                 '\r' -> "\\r"
                 '\t' -> "\\t"
@@ -71,20 +67,20 @@ class JSONString private constructor(private val value: String?) : JSONValue() {
 
             val result = StringBuilder()
             var i = 0
-            while (i < s.length()) {
-                val c: Char = s.charAt(i)
-                if (c != '\\' || i + 1 == s.length()) {
+            while (i < s.length) {
+                val c: Char = s[i]
+                if (c != '\\' || i + 1 == s.length) {
                     result.append(c)
                     i++
                     continue
                 }
-                val next: Char = s.charAt(i + 1)
+                val next: Char = s[i + 1]
                 when (next) {
                     '\\' -> result.append('\\')
                     '/' -> result.append('/')
                     '"' -> result.append('"')
                     'b' -> result.append('\b')
-                    'f' -> result.append('\f')
+                    'f' -> result.append('\u000c')
                     'n' -> result.append('\n')
                     'r' -> result.append('\r')
                     't' -> result.append('\t')

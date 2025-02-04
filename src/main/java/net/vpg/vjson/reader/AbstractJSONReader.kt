@@ -20,7 +20,8 @@ import net.vpg.vjson.reader.JSONReader.TokenType
 
 abstract class AbstractJSONReader : JSONReader {
     protected var currentToken: Any? = null
-    protected var currentTokenType: TokenType? = null
+    override val currentTokenType: TokenType?
+        get() = checkOpen().let{ nextTokenType0 }
 
     override fun getCurrentTokenType(): TokenType? {
         checkOpen()
@@ -32,15 +33,8 @@ abstract class AbstractJSONReader : JSONReader {
         return this.nextTokenType0.also { currentTokenType = it }
     }
 
-    override fun getCurrentToken(): Any? {
-        checkOpen()
-        return currentToken
-    }
-
-    override fun getNextToken(): Any? {
-        getNextTokenType()
-        return currentToken
-    }
+    override val nextToken: Any?
+        get() = getNextTokenType().let{ currentToken }
 
     @get:Throws(ParseException::class)
     protected abstract val nextTokenType0: TokenType?

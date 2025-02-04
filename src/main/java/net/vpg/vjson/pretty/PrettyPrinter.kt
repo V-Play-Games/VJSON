@@ -29,7 +29,7 @@ class PrettyPrinter(val config: PrettyPrintConfig, private val write: Consumer<S
     fun nextLine(newLineCondition: Boolean, indentDelta: Int, spaceCondition: Boolean) {
         if (newLineCondition) {
             indentLevel += indentDelta
-            print("\n" + config.getIndent().repeat(indentLevel))
+            print("\n" + config.indent!!.repeat(indentLevel))
         } else spaceIf(spaceCondition)
     }
 

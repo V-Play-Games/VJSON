@@ -79,6 +79,7 @@ abstract class JSONValue : DeserializableValue {
     }
 
     companion object {
+        @JvmStatic
         protected var parser: JSONParser? = null
             get() = if (field == null) JSONParser().also { field = it } else field
             private set
@@ -94,7 +95,7 @@ abstract class JSONValue : DeserializableValue {
         }
 
         @Throws(ParseException::class)
-        fun parse(`in`: InputStream?): JSONValue? {
+        fun parse(`in`: InputStream): JSONValue? {
             return parser!!.parse(`in`)
         }
 
@@ -104,7 +105,7 @@ abstract class JSONValue : DeserializableValue {
         }
 
         @Throws(ParseException::class, FileNotFoundException::class)
-        fun parse(f: File?): JSONValue? {
+        fun parse(f: File): JSONValue? {
             return parser!!.parse(f)
         }
 
@@ -115,17 +116,17 @@ abstract class JSONValue : DeserializableValue {
 
         fun of(o: Any?): JSONValue? {
             return when (o) {
-                null -> JSONNull.Companion.getInstance()
-                -> value
-                -> JSONArray.Companion.of(list)
-                -> JSONObject.Companion.of(map)
-                -> JSONString.Companion.of(s)
-                -> JSONNumber.Companion.of(number)
-                -> JSONBoolean.Companion.of(o as Boolean)
-                -> arr.toArray()
-                -> obj.toObject()
-                -> Companion.parse(value.deserialize())
-                else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass())
+                null -> JSONNull.Companion.instance
+                is JSONValue -> o
+                is List<*> -> JSONArray.Companion.of(o)
+                is Map<*, *> -> JSONObject.Companion.of(o as Map<Any?, Any?>)
+                is String -> JSONString.Companion.of(o)
+                is Number-> JSONNumber.Companion.of(o)
+                is Boolean-> JSONBoolean.Companion.of(o)
+                is SerializableArray-> o.toArray()
+                is SerializableObject-> o.toObject()
+                is DeserializableValue-> Companion.parse(o.deserialize())
+                else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.javaClass)
             }
         }
     }

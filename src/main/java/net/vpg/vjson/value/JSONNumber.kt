@@ -16,19 +16,14 @@
 package net.vpg.vjson.value
 
 class JSONNumber private constructor(private val value: Number) : JSONValue() {
-    override fun equals(o: Any?): Boolean {
-        return o is JSONNumber && o.value.doubleValue() == this.value.doubleValue()
-    }
+    override val type = Type.NUMBER
+    override val raw = value
 
-    override fun getType(): Type {
-        return Type.NUMBER
+    override fun equals(o: Any?): Boolean {
+        return o is JSONNumber && o.value.toDouble() == this.value.toDouble()
     }
 
     override fun toNumber(): Number {
-        return value
-    }
-
-    override fun getRaw(): Any {
         return value
     }
 

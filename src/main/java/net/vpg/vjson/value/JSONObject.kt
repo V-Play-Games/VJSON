@@ -20,9 +20,7 @@ import net.vpg.vjson.parser.ParseException
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
 import java.io.*
-import java.lang.String
 import java.net.URL
-import java.util.Map
 import java.util.function.BiConsumer
 import java.util.function.BinaryOperator
 import java.util.function.Function
@@ -52,12 +50,12 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
         map = LinkedHashMap<String?, JSONValue?>()
     }
 
-    private constructor(map: MutableMap<*, *>) : this() {
+    private constructor(map: Map<*, *>) : this() {
         putAll(map)
     }
 
     fun size(): Int {
-        return map.size()
+        return map.size
     }
 
     val isEmpty: Boolean
@@ -72,8 +70,8 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
         return this
     }
 
-    fun putAll(map: MutableMap<*, *>): JSONObject {
-        map.forEach { k: Any?, v: Any? -> put(String.valueOf(k), v) }
+    fun putAll(map: Map<*, *>): JSONObject {
+        map.forEach { k: Any?, v: Any? -> put(k?.toString(), v) }
         return this
     }
 
@@ -96,12 +94,12 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
     }
 
     override fun deserialize(): kotlin.String {
-        return map.entrySet()
+        return map.entries
             .stream()
             .map<kotlin.String?>(Function { e: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? ->
                 "\"" + JSONString.Companion.escape(
-                    e.getKey()
-                ) + "\":" + e.getValue().deserialize()
+                    e?.key
+                ) + "\":" + e?.value?.deserialize()
             })
             .collect(Collectors.joining(",", "{", "}"))
     }
@@ -114,7 +112,7 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
         return map.entrySet().stream().collect(
             Collectors.toMap(
                 Function { Map.Entry.getKey() },
-                Function { entry: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? -> entry.getValue().getRaw() })
+                Function { entry: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? -> entry?.value?.raw })
         )
     }
 
@@ -123,60 +121,60 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.Strin
     }
 
     override fun toPrettyString(printer: PrettyPrinter) {
-        val config = printer.getConfig()
+        val config = printer.config
         printer.print("{")
-        printer.nextLine(config.isObjectContentsOnNewLine(), +1, config.isSpaceWithinBraces())
-        val iterator: MutableIterator<MutableMap.MutableEntry<kotlin.String?, JSONValue?>?> = map.entrySet().iterator()
+        printer.nextLine(config.isObjectContentsOnNewLine, +1, config.isSpaceWithinBraces)
+        val iterator: MutableIterator<MutableMap.MutableEntry<kotlin.String?, JSONValue?>?> = map.entries.iterator()
         while (iterator.hasNext()) {
             val next: MutableMap.MutableEntry<kotlin.String?, JSONValue?> = iterator.next()!!
-            printer.print("\"" + JSONString.Companion.escape(next.getKey()) + "\"")
-            printer.spaceIf(config.isSpaceBeforeColon())
+            printer.print("\"" + JSONString.Companion.escape(next.key) + "\"")
+            printer.spaceIf(config.isSpaceBeforeColon)
             printer.print(":")
-            printer.spaceIf(config.isSpaceAfterColon())
-            next.getValue().toPrettyString(printer)
+            printer.spaceIf(config.isSpaceAfterColon)
+            next.value?.toPrettyString(printer)
             if (!iterator.hasNext()) break
-            printer.spaceIf(config.isSpaceBeforeComma())
+            printer.spaceIf(config.isSpaceBeforeComma)
             printer.print(",")
-            printer.nextLine(config.isObjectContentsOnNewLine(), 0, config.isSpaceAfterComma())
+            printer.nextLine(config.isObjectContentsOnNewLine, 0, config.isSpaceAfterComma)
         }
-        printer.nextLine(config.isObjectContentsOnNewLine(), -1, config.isSpaceWithinBraces())
+        printer.nextLine(config.isObjectContentsOnNewLine, -1, config.isSpaceWithinBraces)
         printer.print("}")
     }
 
     companion object {
-        fun of(map: MutableMap<*, *>): JSONObject {
+        fun of(map: Map<Any?, Any?>): JSONObject {
             return JSONObject(map)
         }
 
         @Throws(ParseException::class)
         fun parse(`in`: Reader?): JSONObject? {
-            return JSONValue.Companion.getParser().parse(`in`).toObject()
+            return JSONValue.Companion.parser?.parse(`in`)?.toObject()
         }
 
         @JvmStatic
         @Throws(ParseException::class, IOException::class)
         fun parse(url: URL): JSONObject? {
-            return JSONValue.Companion.getParser().parse(url).toObject()
+            return JSONValue.Companion.parser?.parse(url)?.toObject()
         }
 
         @Throws(ParseException::class)
-        fun parse(`in`: InputStream?): JSONObject? {
-            return JSONValue.Companion.getParser().parse(`in`).toObject()
+        fun parse(`in`: InputStream): JSONObject? {
+            return JSONValue.Companion.parser?.parse(`in`)?.toObject()
         }
 
         @Throws(ParseException::class)
         fun parse(s: kotlin.String): JSONObject? {
-            return JSONValue.Companion.getParser().parse(s).toObject()
+            return JSONValue.Companion.parser?.parse(s)?.toObject()
         }
 
         @Throws(ParseException::class, FileNotFoundException::class)
-        fun parse(f: File?): JSONObject? {
-            return JSONValue.Companion.getParser().parse(f).toObject()
+        fun parse(f: File): JSONObject? {
+            return JSONValue.Companion.parser?.parse(f)?.toObject()
         }
 
         @Throws(ParseException::class)
         fun parse(s: JSONReader): JSONObject? {
-            return JSONValue.Companion.getParser().parse(s).toObject()
+            return JSONValue.Companion.parser?.parse(s)?.toObject()
         }
 
         fun <T> collector(
