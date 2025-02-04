@@ -16,7 +16,6 @@
 
 package net.vpg.vjson.pretty;
 
-import java.io.PrintStream;
 import java.util.function.Consumer;
 
 public class PrettyPrinter {
@@ -29,35 +28,28 @@ public class PrettyPrinter {
         this.write = write;
     }
 
-    public PrettyPrinter(PrettyPrintConfig config, StringBuilder sb) {
-        this(config, sb::append);
-    }
-
-    public PrettyPrinter(PrettyPrintConfig config, PrintStream stream) {
-        this(config, stream::print);
+    public PrettyPrinter(Consumer<String> write) {
+        this(new PrettyPrintConfig(), write);
     }
 
     public PrettyPrintConfig getConfig() {
         return config;
     }
 
-    public void incrementIndentLevel() {
-        indentLevel++;
-    }
-
-    public void decrementIndentLevel() {
-        indentLevel--;
-    }
-
     public void print(String s) {
         write.accept(s);
     }
 
-    public void newLineAndIndent() {
-        print("\n" + config.getIndent().repeat(indentLevel));
+    public void nextLine(boolean newLineCondition, int indentDelta, boolean spaceCondition) {
+        if (newLineCondition) {
+            indentLevel += indentDelta;
+            print("\n" + config.getIndent().repeat(indentLevel));
+        } else
+            spaceIf(spaceCondition);
     }
 
-    public void space() {
-        print(" ");
+    public void spaceIf(boolean condition) {
+        if (condition)
+            print(" ");
     }
 }

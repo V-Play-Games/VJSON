@@ -16,15 +16,15 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.parser.JSONParser;
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.reader.JSONReader;
-
 import java.io.*;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import net.vpg.vjson.parser.JSONParser;
+import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.reader.JSONReader;
 
 public abstract class JSONValue implements DeserializableValue {
     private static JSONParser parser;

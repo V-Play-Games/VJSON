@@ -16,14 +16,14 @@
 
 package net.vpg.vjson.reader;
 
-import net.vpg.vjson.parser.ParseException;
-
 import java.io.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
 
 import static net.vpg.vjson.reader.JSONReader.TokenType.*;
+
+import net.vpg.vjson.parser.ParseException;
 
 public class DefaultJSONReader extends AbstractJSONReader {
     private static final Map<Character, TokenType> typeMap = Map.of(

@@ -16,16 +16,16 @@
 
 package net.vpg.vjson.parser;
 
+import java.io.*;
+import java.net.URL;
+
+import static net.vpg.vjson.reader.JSONReader.TokenType.*;
+
 import net.vpg.vjson.reader.DefaultJSONReader;
 import net.vpg.vjson.reader.JSONReader;
 import net.vpg.vjson.value.JSONArray;
 import net.vpg.vjson.value.JSONObject;
 import net.vpg.vjson.value.JSONValue;
-
-import java.io.*;
-import java.net.URL;
-
-import static net.vpg.vjson.reader.JSONReader.TokenType.*;
 
 /**
  * A parser which parses JSON from a pre-configured {@linkplain JSONReader}.

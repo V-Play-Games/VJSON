@@ -16,19 +16,18 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.pretty.PrettyPrintConfig;
-import net.vpg.vjson.pretty.PrettyPrinter;
-import net.vpg.vjson.reader.JSONReader;
-
 import java.io.*;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+
+import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
+import net.vpg.vjson.reader.JSONReader;
 
 public final class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
     private final Map<String, JSONValue> map;
@@ -143,36 +142,22 @@ public final class JSONObject extends JSONValue implements SerializableObject, J
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("{");
-        if (config.isObjectContentsOnNewLine()) {
-            printer.incrementIndentLevel();
-            printer.newLineAndIndent();
-        } else if (config.isSpaceWithinBraces())
-            printer.space();
-        Iterator<Map.Entry<String, JSONValue>> iterator = map.entrySet().iterator();
+        printer.nextLine(config.isObjectContentsOnNewLine(), +1, config.isSpaceWithinBraces());
+        var iterator = map.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, JSONValue> next = iterator.next();
+            var next = iterator.next();
             printer.print("\"" + JSONString.escape(next.getKey()) + "\"");
-            if (config.isSpaceBeforeColon())
-                printer.space();
+            printer.spaceIf(config.isSpaceBeforeColon());
             printer.print(":");
-            if (config.isSpaceAfterColon())
-                printer.space();
+            printer.spaceIf(config.isSpaceAfterColon());
             next.getValue().toPrettyString(printer);
-            if (iterator.hasNext()) {
-                if (config.isSpaceBeforeComma())
-                    printer.space();
-                printer.print(",");
-                if (config.isObjectContentsOnNewLine())
-                    printer.newLineAndIndent();
-                else if (config.isSpaceAfterComma())
-                    printer.space();
-            }
+            if (!iterator.hasNext())
+                break;
+            printer.spaceIf(config.isSpaceBeforeComma());
+            printer.print(",");
+            printer.nextLine(config.isObjectContentsOnNewLine(), 0, config.isSpaceAfterComma());
         }
-        if (config.isObjectContentsOnNewLine()) {
-            printer.decrementIndentLevel();
-            printer.newLineAndIndent();
-        } else if (config.isSpaceWithinBraces())
-            printer.space();
+        printer.nextLine(config.isObjectContentsOnNewLine(), -1, config.isSpaceWithinBraces());
         printer.print("}");
     }
 }

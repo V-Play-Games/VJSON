@@ -16,10 +16,10 @@
 
 package net.vpg.vjson.reader;
 
-import net.vpg.vjson.parser.ParseException;
-
 import java.io.Closeable;
 import java.io.IOException;
+
+import net.vpg.vjson.parser.ParseException;
 
 public interface JSONReader extends Closeable {
     int getPosition();

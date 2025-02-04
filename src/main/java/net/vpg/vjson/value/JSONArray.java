@@ -16,21 +16,20 @@
 
 package net.vpg.vjson.value;
 
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.pretty.PrettyPrintConfig;
-import net.vpg.vjson.pretty.PrettyPrinter;
-import net.vpg.vjson.reader.JSONReader;
-
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import net.vpg.vjson.parser.ParseException;
+import net.vpg.vjson.pretty.PrettyPrintConfig;
+import net.vpg.vjson.pretty.PrettyPrinter;
+import net.vpg.vjson.reader.JSONReader;
 
 public final class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
     private final List<JSONValue> list;
@@ -150,29 +149,17 @@ public final class JSONArray extends JSONValue implements SerializableArray, JSO
     public void toPrettyString(PrettyPrinter printer) {
         PrettyPrintConfig config = printer.getConfig();
         printer.print("[");
-        if (config.isArrayContentsOnNewLine()) {
-            printer.incrementIndentLevel();
-            printer.newLineAndIndent();
-        } else if (config.isSpaceWithinBrackets())
-            printer.space();
-        Iterator<JSONValue> iterator = list.iterator();
+        printer.nextLine(config.isArrayContentsOnNewLine(), +1, config.isSpaceWithinBrackets());
+        var iterator = list.iterator();
         while (iterator.hasNext()) {
             iterator.next().toPrettyString(printer);
-            if (iterator.hasNext()) {
-                if (config.isSpaceBeforeComma())
-                    printer.space();
-                printer.print(",");
-                if (config.isArrayContentsOnNewLine()) {
-                    printer.newLineAndIndent();
-                } else if (config.isSpaceAfterComma())
-                    printer.space();
-            }
+            if (!iterator.hasNext())
+                break;
+            printer.spaceIf(config.isSpaceBeforeComma());
+            printer.print(",");
+            printer.nextLine(config.isArrayContentsOnNewLine(), 0, config.isSpaceAfterComma());
         }
-        if (config.isArrayContentsOnNewLine()) {
-            printer.decrementIndentLevel();
-            printer.newLineAndIndent();
-        } else if (config.isSpaceWithinBrackets())
-            printer.space();
+        printer.nextLine(config.isArrayContentsOnNewLine(), -1, config.isSpaceWithinBrackets());
         printer.print("]");
     }
 }
