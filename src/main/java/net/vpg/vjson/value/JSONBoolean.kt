@@ -13,47 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
-
-public final class JSONBoolean extends JSONValue {
-    private static final JSONBoolean TRUE = new JSONBoolean(true);
-    private static final JSONBoolean FALSE = new JSONBoolean(false);
-    private final boolean value;
-
-    private JSONBoolean(boolean value) {
-        this.value = value;
+class JSONBoolean private constructor(private val value: Boolean) : JSONValue() {
+    override fun getType(): Type {
+        return Type.BOOLEAN
     }
 
-    public static JSONBoolean ofTrue() {
-        return TRUE;
+    override fun toBoolean(): Boolean {
+        return value
     }
 
-    public static JSONBoolean ofFalse() {
-        return FALSE;
+    override fun getRaw(): Any {
+        return value
     }
 
-    public static JSONBoolean of(boolean value) {
-        return value ? TRUE : FALSE;
+    override fun deserialize(): String {
+        return java.lang.Boolean.toString(value)
     }
 
-    @Override
-    public Type getType() {
-        return Type.BOOLEAN;
-    }
+    companion object {
+        private val TRUE = JSONBoolean(true)
+        private val FALSE = JSONBoolean(false)
+        fun ofTrue(): JSONBoolean {
+            return TRUE
+        }
 
-    @Override
-    public boolean toBoolean() {
-        return value;
-    }
+        fun ofFalse(): JSONBoolean {
+            return FALSE
+        }
 
-    @Override
-    public Object getRaw() {
-        return value;
-    }
-
-    @Override
-    public String deserialize() {
-        return Boolean.toString(value);
+        fun of(value: Boolean): JSONBoolean? {
+            return if (value) TRUE else FALSE
+        }
     }
 }

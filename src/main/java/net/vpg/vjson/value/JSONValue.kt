@@ -13,123 +13,120 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+import net.vpg.vjson.parser.JSONParser
+import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.reader.JSONReader
+import java.io.*
+import java.net.URL
+import java.util.*
 
-import java.io.*;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+abstract class JSONValue : DeserializableValue {
+    abstract val type: Type?
 
-import net.vpg.vjson.parser.JSONParser;
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.reader.JSONReader;
+    abstract val raw: Any?
 
-public abstract class JSONValue implements DeserializableValue {
-    private static JSONParser parser;
-
-    protected static JSONParser getParser() {
-        return parser == null ? parser = new JSONParser() : parser;
+    override fun equals(o: Any?): Boolean {
+        return o is JSONValue && o.raw == this.raw
     }
 
-    public static JSONValue parse(Reader in) throws ParseException {
-        return getParser().parse(in);
+    override fun hashCode(): Int {
+        return Objects.hashCode(this.raw)
     }
 
-    public static JSONValue parse(URL url) throws ParseException, IOException {
-        return getParser().parse(url);
+    open fun toBoolean(): Boolean {
+        return error<Boolean?>(Type.BOOLEAN)!!
     }
 
-    public static JSONValue parse(InputStream in) throws ParseException {
-        return getParser().parse(in);
+    open fun toNumber(): Number? {
+        return error<Number?>(Type.NUMBER)
     }
 
-    public static JSONValue parse(String s) throws ParseException {
-        return getParser().parse(s);
+    open fun toObject(): JSONObject? {
+        return error<JSONObject?>(Type.OBJECT)
     }
 
-    public static JSONValue parse(File f) throws ParseException, FileNotFoundException {
-        return getParser().parse(f);
+    open fun toArray(): JSONArray? {
+        return error<JSONArray?>(Type.ARRAY)
     }
 
-    public static JSONValue parse(JSONReader s) throws ParseException {
-        return getParser().parse(s);
+    fun toInt(): Int {
+        return toNumber()!!.toInt()
     }
 
-    @SuppressWarnings("rawtypes")
-    public static JSONValue of(Object o) {
-        return switch (o) {
-            case null -> JSONNull.getInstance();
-            case JSONValue value -> value;
-            case List list -> JSONArray.of(list);
-            case Map map -> JSONObject.of(map);
-            case String s -> JSONString.of(s);
-            case Number number -> JSONNumber.of(number);
-            case Boolean b -> JSONBoolean.of((boolean) o);
-            case SerializableArray arr -> arr.toArray();
-            case SerializableObject obj -> obj.toObject();
-            case DeserializableValue value -> parse(value.deserialize());
-            default -> throw new UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass());
-        };
+    fun toLong(): Long {
+        return toNumber()!!.toLong()
     }
 
-    public abstract Type getType();
-
-    public abstract Object getRaw();
-
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof JSONValue && Objects.equals(((JSONValue) o).getRaw(), getRaw());
+    fun toDouble(): Double {
+        return toNumber()!!.toDouble()
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(getRaw());
+    open val isNull: Boolean
+        get() = false
+
+    override fun toString(): String {
+        return deserialize()
     }
 
-    public boolean toBoolean() {
-        return error(Type.BOOLEAN);
+    private fun <T> error(type: Type?): T? {
+        throw UnsupportedOperationException("Cannot cast value of type " + this.type + " to type " + type)
     }
 
-    public Number toNumber() {
-        return error(Type.NUMBER);
-    }
-
-    public JSONObject toObject() {
-        return error(Type.OBJECT);
-    }
-
-    public JSONArray toArray() {
-        return error(Type.ARRAY);
-    }
-
-    public int toInt() {
-        return toNumber().intValue();
-    }
-
-    public long toLong() {
-        return toNumber().longValue();
-    }
-
-    public double toDouble() {
-        return toNumber().doubleValue();
-    }
-
-    public boolean isNull() {
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return deserialize();
-    }
-
-    private <T> T error(Type type) {
-        throw new UnsupportedOperationException("Cannot cast value of type " + getType() + " to type " + type);
-    }
-
-    public enum Type {
+    enum class Type {
         NULL, STRING, NUMBER, BOOLEAN, OBJECT, ARRAY
+    }
+
+    companion object {
+        protected var parser: JSONParser? = null
+            get() = if (field == null) JSONParser().also { field = it } else field
+            private set
+
+        @Throws(ParseException::class)
+        fun parse(`in`: Reader?): JSONValue? {
+            return parser!!.parse(`in`)
+        }
+
+        @Throws(ParseException::class, IOException::class)
+        fun parse(url: URL): JSONValue? {
+            return parser!!.parse(url)
+        }
+
+        @Throws(ParseException::class)
+        fun parse(`in`: InputStream?): JSONValue? {
+            return parser!!.parse(`in`)
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: String): JSONValue? {
+            return parser!!.parse(s)
+        }
+
+        @Throws(ParseException::class, FileNotFoundException::class)
+        fun parse(f: File?): JSONValue? {
+            return parser!!.parse(f)
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: JSONReader): JSONValue? {
+            return parser!!.parse(s)
+        }
+
+        fun of(o: Any?): JSONValue? {
+            return when (o) {
+                null -> JSONNull.Companion.getInstance()
+                -> value
+                -> JSONArray.Companion.of(list)
+                -> JSONObject.Companion.of(map)
+                -> JSONString.Companion.of(s)
+                -> JSONNumber.Companion.of(number)
+                -> JSONBoolean.Companion.of(o as Boolean)
+                -> arr.toArray()
+                -> obj.toObject()
+                -> Companion.parse(value.deserialize())
+                else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.getClass())
+            }
+        }
     }
 }

@@ -13,153 +13,156 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+import net.vpg.vjson.parser.JSONParser.parse
+import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.pretty.PrettyPrinter
+import net.vpg.vjson.reader.JSONReader
+import java.io.*
+import java.net.URL
+import java.util.function.BiConsumer
+import java.util.function.BinaryOperator
+import java.util.function.Function
+import java.util.function.Supplier
+import java.util.stream.Collector
+import java.util.stream.Collectors
+import java.util.stream.Stream
 
-import java.io.*;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+class JSONArray : JSONValue, SerializableArray, JSONContainer<Int?> {
+    private val list: MutableList<JSONValue?>
 
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.pretty.PrettyPrintConfig;
-import net.vpg.vjson.pretty.PrettyPrinter;
-import net.vpg.vjson.reader.JSONReader;
-
-public final class JSONArray extends JSONValue implements SerializableArray, JSONContainer<Integer> {
-    private final List<JSONValue> list;
-
-    public JSONArray() {
-        this.list = new ArrayList<>();
+    constructor() {
+        this.list = ArrayList<JSONValue?>()
     }
 
-    private JSONArray(List<?> list) {
-        this.list = list.stream().map(JSONValue::of).collect(Collectors.toList());
+    private constructor(list: MutableList<*>) {
+        this.list = list.stream().map<JSONValue?> { o: Any? -> JSONValue.Companion.of(o) }.collect(Collectors.toList())
     }
 
-    public static JSONArray of(List<?> list) {
-        return new JSONArray(list);
+    fun size(): Int {
+        return list.size
     }
 
-    public static JSONArray parse(Reader in) throws ParseException {
-        return getParser().parse(in).toArray();
+    val isEmpty: Boolean
+        get() = list.isEmpty()
+
+    override fun get(index: Int): JSONValue? {
+        return JSONValue.Companion.of(list.get(index))
     }
 
-    public static JSONArray parse(URL url) throws ParseException, IOException {
-        return getParser().parse(url).toArray();
+    fun add(index: Int, value: Any?): JSONArray {
+        list.add(index, JSONValue.Companion.of(value))
+        return this
     }
 
-    public static JSONArray parse(InputStream in) throws ParseException {
-        return getParser().parse(in).toArray();
+    fun add(value: Any?): JSONArray {
+        list.add(JSONValue.Companion.of(value))
+        return this
     }
 
-    public static JSONArray parse(String s) throws ParseException {
-        return getParser().parse(s).toArray();
+    fun addAll(values: MutableCollection<*>): JSONArray {
+        values.forEach { value: Any? -> this.add(value) }
+        return this
     }
 
-    public static JSONArray parse(File f) throws ParseException, FileNotFoundException {
-        return getParser().parse(f).toArray();
+    fun addAll(array: JSONArray): JSONArray {
+        list.addAll(array.list)
+        return this
     }
 
-    public static JSONArray parse(JSONReader s) throws ParseException {
-        return getParser().parse(s).toArray();
+    fun remove(index: Int): JSONArray {
+        list.removeAt(index)
+        return this
     }
 
-    public static <T> Collector<T, ?, JSONArray> collector() {
-        return Collector.of(JSONArray::new, JSONArray::add, JSONArray::addAll);
+    fun toList(): MutableList<JSONValue?> {
+        return list
     }
 
-    public int size() {
-        return list.size();
-    }
-
-    public boolean isEmpty() {
-        return list.isEmpty();
-    }
-
-    public JSONValue get(Integer index) {
-        return JSONValue.of(list.get(index));
-    }
-
-    public JSONArray add(int index, Object value) {
-        list.add(index, JSONValue.of(value));
-        return this;
-    }
-
-    public JSONArray add(Object value) {
-        list.add(JSONValue.of(value));
-        return this;
-    }
-
-    public JSONArray addAll(Collection<?> values) {
-        values.forEach(this::add);
-        return this;
-    }
-
-    public JSONArray addAll(JSONArray array) {
-        list.addAll(array.list);
-        return this;
-    }
-
-    public JSONArray remove(int index) {
-        list.remove(index);
-        return this;
-    }
-
-    public List<JSONValue> toList() {
-        return list;
-    }
-
-    public <T> List<T> toList(Function<JSONValue, T> converter) {
+    fun <T> toList(converter: Function<JSONValue?, T?>?): MutableList<T?> {
         return list.stream()
-            .map(converter)
-            .collect(Collectors.toList());
+            .map<T?>(converter)
+            .collect(Collectors.toList())
     }
 
-    public Stream<JSONValue> stream() {
-        return list.stream();
+    fun stream(): Stream<JSONValue?> {
+        return list.stream()
     }
 
-    @Override
-    public String deserialize() {
-        return list.stream().map(JSONValue::deserialize).collect(Collectors.joining(",", "[", "]"));
+    override fun deserialize(): String {
+        return list.stream().map<String?> { obj: JSONValue? -> obj!!.deserialize() }
+            .collect(Collectors.joining(",", "[", "]"))
     }
 
-    @Override
-    public Type getType() {
-        return Type.ARRAY;
+    override fun getType(): Type {
+        return Type.ARRAY
     }
 
-    @Override
-    public Object getRaw() {
-        return list.stream().map(JSONValue::getRaw).collect(Collectors.toList());
+    override fun getRaw(): Any {
+        return list.stream().map<Any?> { obj: JSONValue? -> obj!!.getRaw() }.collect(Collectors.toList())
     }
 
-    @Override
-    public JSONArray toArray() {
-        return this;
+    override fun toArray(): JSONArray {
+        return this
     }
 
-    @Override
-    public void toPrettyString(PrettyPrinter printer) {
-        PrettyPrintConfig config = printer.getConfig();
-        printer.print("[");
-        printer.nextLine(config.isArrayContentsOnNewLine(), +1, config.isSpaceWithinBrackets());
-        var iterator = list.iterator();
+    override fun toPrettyString(printer: PrettyPrinter) {
+        val config = printer.getConfig()
+        printer.print("[")
+        printer.nextLine(config.isArrayContentsOnNewLine(), +1, config.isSpaceWithinBrackets())
+        val iterator = list.iterator()
         while (iterator.hasNext()) {
-            iterator.next().toPrettyString(printer);
-            if (!iterator.hasNext())
-                break;
-            printer.spaceIf(config.isSpaceBeforeComma());
-            printer.print(",");
-            printer.nextLine(config.isArrayContentsOnNewLine(), 0, config.isSpaceAfterComma());
+            iterator.next()!!.toPrettyString(printer)
+            if (!iterator.hasNext()) break
+            printer.spaceIf(config.isSpaceBeforeComma())
+            printer.print(",")
+            printer.nextLine(config.isArrayContentsOnNewLine(), 0, config.isSpaceAfterComma())
         }
-        printer.nextLine(config.isArrayContentsOnNewLine(), -1, config.isSpaceWithinBrackets());
-        printer.print("]");
+        printer.nextLine(config.isArrayContentsOnNewLine(), -1, config.isSpaceWithinBrackets())
+        printer.print("]")
+    }
+
+    companion object {
+        fun of(list: MutableList<*>): JSONArray {
+            return JSONArray(list)
+        }
+
+        @Throws(ParseException::class)
+        fun parse(`in`: Reader?): JSONArray? {
+            return JSONValue.Companion.getParser().parse(`in`).toArray()
+        }
+
+        @Throws(ParseException::class, IOException::class)
+        fun parse(url: URL): JSONArray? {
+            return JSONValue.Companion.getParser().parse(url).toArray()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(`in`: InputStream?): JSONArray? {
+            return JSONValue.Companion.getParser().parse(`in`).toArray()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: String): JSONArray? {
+            return JSONValue.Companion.getParser().parse(s).toArray()
+        }
+
+        @Throws(ParseException::class, FileNotFoundException::class)
+        fun parse(f: File?): JSONArray? {
+            return JSONValue.Companion.getParser().parse(f).toArray()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: JSONReader): JSONArray? {
+            return JSONValue.Companion.getParser().parse(s).toArray()
+        }
+
+        fun <T> collector(): Collector<T?, *, JSONArray?> {
+            return Collector.of<T?, JSONArray?>(
+                Supplier { JSONArray() },
+                BiConsumer { obj: JSONArray?, value: T? -> obj!!.add(value) },
+                BinaryOperator { obj: JSONArray?, array: JSONArray -> obj!!.addAll(array) })
+        }
     }
 }

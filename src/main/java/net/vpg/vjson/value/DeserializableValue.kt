@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+import net.vpg.vjson.pretty.PrettyPrinter
+import java.util.function.Consumer
 
-import net.vpg.vjson.pretty.PrettyPrinter;
+interface DeserializableValue {
+    fun deserialize(): String?
 
-public interface DeserializableValue {
-    String deserialize();
-
-    default String toPrettyString() {
-        StringBuilder sb = new StringBuilder();
-        toPrettyString(new PrettyPrinter(sb::append));
-        return sb.toString();
+    fun toPrettyString(): String {
+        val sb = StringBuilder()
+        toPrettyString(PrettyPrinter(Consumer { str: String? -> sb.append(str) }))
+        return sb.toString()
     }
 
-    default void toPrettyString(PrettyPrinter printer) {
-        printer.print(deserialize());
+    fun toPrettyString(printer: PrettyPrinter) {
+        printer.print(deserialize())
     }
 }

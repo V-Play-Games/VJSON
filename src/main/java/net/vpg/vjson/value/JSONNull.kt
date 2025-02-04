@@ -13,46 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
-
-public final class JSONNull extends JSONValue {
-    private static final JSONNull instance = new JSONNull();
-
-    private JSONNull() {
+class JSONNull private constructor() : JSONValue() {
+    override fun getType(): Type {
+        return Type.NULL
     }
 
-    public static JSONNull getInstance() {
-        return instance;
+    override fun getRaw(): Any? {
+        return null
     }
 
-    @Override
-    public Type getType() {
-        return Type.NULL;
+    override fun equals(o: Any?): Boolean {
+        return o is JSONNull
     }
 
-    @Override
-    public Object getRaw() {
-        return null;
+    override fun hashCode(): Int {
+        return 0
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof JSONNull;
+    override fun isNull(): Boolean {
+        return true
     }
 
-    @Override
-    public int hashCode() {
-        return 0;
+    override fun deserialize(): String {
+        return "null"
     }
 
-    @Override
-    public boolean isNull() {
-        return true;
-    }
-
-    @Override
-    public String deserialize() {
-        return "null";
+    companion object {
+        val instance: JSONNull = JSONNull()
     }
 }

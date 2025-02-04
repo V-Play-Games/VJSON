@@ -13,35 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.reader
 
-package net.vpg.vjson.reader;
+import net.vpg.vjson.parser.ParseException
+import java.io.Closeable
+import java.io.IOException
+import java.lang.String
+import kotlin.Any
+import kotlin.Int
+import kotlin.Throws
 
-import java.io.Closeable;
-import java.io.IOException;
+interface JSONReader : Closeable {
+    val position: Int
 
-import net.vpg.vjson.parser.ParseException;
+    val currentTokenType: TokenType?
 
-public interface JSONReader extends Closeable {
-    int getPosition();
+    val nextTokenType: TokenType?
 
-    TokenType getCurrentTokenType();
+    val currentToken: Any?
 
-    TokenType getNextTokenType();
+    @get:Throws(IOException::class)
+    val nextToken: Any?
 
-    Object getCurrentToken();
-
-    Object getNextToken() throws IOException;
-
-    default void expectNextType(TokenType type) throws ParseException {
-        if (getNextTokenType() != type)
-            error();
+    @Throws(ParseException::class)
+    fun expectNextType(type: TokenType?) {
+        if (this.nextTokenType != type) error<Any?>()
     }
 
-    default <T> T error() throws ParseException {
-        throw new ParseException(getPosition(), String.valueOf(getCurrentToken()));
+    @Throws(ParseException::class)
+    fun <T> error(): T? {
+        throw ParseException(this.position, String.valueOf(this.currentToken))
     }
 
-    enum TokenType {
+    enum class TokenType {
         EOF, NUMBER, STRING, TRUE, FALSE, NULL, OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, COMMA, COLON
     }
 }

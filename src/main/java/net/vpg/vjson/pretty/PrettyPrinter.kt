@@ -13,43 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.pretty
 
-package net.vpg.vjson.pretty;
+import java.util.function.Consumer
 
-import java.util.function.Consumer;
+class PrettyPrinter(val config: PrettyPrintConfig, private val write: Consumer<String?>) {
+    private var indentLevel = 0
 
-public class PrettyPrinter {
-    private final PrettyPrintConfig config;
-    private final Consumer<String> write;
-    private int indentLevel;
+    constructor(write: Consumer<String?>) : this(PrettyPrintConfig(), write)
 
-    public PrettyPrinter(PrettyPrintConfig config, Consumer<String> write) {
-        this.config = config;
-        this.write = write;
+    fun print(s: String?) {
+        write.accept(s)
     }
 
-    public PrettyPrinter(Consumer<String> write) {
-        this(new PrettyPrintConfig(), write);
-    }
-
-    public PrettyPrintConfig getConfig() {
-        return config;
-    }
-
-    public void print(String s) {
-        write.accept(s);
-    }
-
-    public void nextLine(boolean newLineCondition, int indentDelta, boolean spaceCondition) {
+    fun nextLine(newLineCondition: Boolean, indentDelta: Int, spaceCondition: Boolean) {
         if (newLineCondition) {
-            indentLevel += indentDelta;
-            print("\n" + config.getIndent().repeat(indentLevel));
-        } else
-            spaceIf(spaceCondition);
+            indentLevel += indentDelta
+            print("\n" + config.getIndent().repeat(indentLevel))
+        } else spaceIf(spaceCondition)
     }
 
-    public void spaceIf(boolean condition) {
-        if (condition)
-            print(" ");
+    fun spaceIf(condition: Boolean) {
+        if (condition) print(" ")
     }
 }

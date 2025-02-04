@@ -13,92 +13,88 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
-
-public final class JSONString extends JSONValue {
-    private final String value;
-
-    private JSONString(String value) {
-        this.value = value;
+class JSONString private constructor(private val value: String?) : JSONValue() {
+    override fun getType(): Type {
+        return Type.STRING
     }
 
-    public static JSONString of(String value) {
-        if (value == null)
-            throw new IllegalArgumentException("value should not be null");
-        return new JSONString(value);
+    override fun toString(): String {
+        return value!!
     }
 
-    public static String escape(String s) {
-        if (s == null) return null;
-        StringBuilder builder = new StringBuilder(s.length());
-        for (int i = 0, len = s.length(); i < len; i++) {
-            builder.append(escape(s.charAt(i)));
-        }
-        return builder.toString();
+    override fun getRaw(): Any? {
+        return value
     }
 
-    public static String escape(char c) {
-        return switch (c) {
-            case '\\' -> "\\\\";
-            case '\b' -> "\\b";
-            case '\f' -> "\\f";
-            case '\n' -> "\\n";
-            case '\r' -> "\\r";
-            case '\t' -> "\\t";
-            case '"' -> "\\\"";
-            case '/' -> "\\/";
-            default -> Character.toString(c);
-        };
+    override fun deserialize(): String {
+        return "\"" + escape(value) + "\""
     }
 
-    public static String unescape(String s) {
-        if (s == null || !s.contains("\\")) {
-            return s;
+    companion object {
+        fun of(value: String): JSONString {
+            requireNotNull(value) { "value should not be null" }
+            return JSONString(value)
         }
 
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c != '\\' || i + 1 == s.length()) {
-                result.append(c);
-                continue;
+        fun escape(s: String?): String {
+            if (s == null) return null
+            val builder: StringBuilder = StringBuilder(s.length())
+            var i = 0
+            val len: Int = s.length()
+            while (i < len) {
+                builder.append(Companion.escape(s.charAt(i)))
+                i++
             }
-            char next = s.charAt(i + 1);
-            switch (next) {
-                case '\\' -> result.append('\\');
-                case '/' -> result.append('/');
-                case '"' -> result.append('"');
-                case 'b' -> result.append('\b');
-                case 'f' -> result.append('\f');
-                case 'n' -> result.append('\n');
-                case 'r' -> result.append('\r');
-                case 't' -> result.append('\t');
-                default -> result.append(c).append(next);
-            }
-            i++;
+            return builder.toString()
         }
 
-        return result.toString();
-    }
+        fun escape(c: Char): String {
+            return when (c) {
+                '\\' -> "\\\\"
+                '\b' -> "\\b"
+                '\f' -> "\\f"
+                '\n' -> "\\n"
+                '\r' -> "\\r"
+                '\t' -> "\\t"
+                '"' -> "\\\""
+                '/' -> "\\/"
+                else -> Character.toString(c)
+            }
+        }
 
-    @Override
-    public Type getType() {
-        return Type.STRING;
-    }
+        fun unescape(s: String?): String? {
+            if (s == null || !s.contains("\\")) {
+                return s
+            }
 
-    @Override
-    public String toString() {
-        return value;
-    }
+            val result = StringBuilder()
+            var i = 0
+            while (i < s.length()) {
+                val c: Char = s.charAt(i)
+                if (c != '\\' || i + 1 == s.length()) {
+                    result.append(c)
+                    i++
+                    continue
+                }
+                val next: Char = s.charAt(i + 1)
+                when (next) {
+                    '\\' -> result.append('\\')
+                    '/' -> result.append('/')
+                    '"' -> result.append('"')
+                    'b' -> result.append('\b')
+                    'f' -> result.append('\f')
+                    'n' -> result.append('\n')
+                    'r' -> result.append('\r')
+                    't' -> result.append('\t')
+                    else -> result.append(c).append(next)
+                }
+                i++
+                i++
+            }
 
-    @Override
-    public Object getRaw() {
-        return value;
-    }
-
-    @Override
-    public String deserialize() {
-        return "\"" + escape(value) + "\"";
+            return result.toString()
+        }
     }
 }

@@ -13,48 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.parser
 
-package net.vpg.vjson.parser;
-
-public class ParseException extends RuntimeException {
-    public static final int UNEXPECTED_TOKEN = 0;
-    public static final int UNEXPECTED_EXCEPTION = 1;
-    private final int type;
-    private final int position;
-    private final String token;
-
-    public ParseException(int position, String token) {
-        super("Unexpected token " + token + " at position " + position);
-        this.position = position;
-        this.type = UNEXPECTED_TOKEN;
-        this.token = token;
-    }
-
-    public ParseException(int position, Throwable cause) {
-        super("Unexpected exception at position " + position, cause);
-        this.position = position;
-        this.type = UNEXPECTED_EXCEPTION;
-        this.token = null;
-    }
-
+class ParseException : RuntimeException {
     /**
      * @return The type of the exception.
      */
-    public int getType() {
-        return type;
-    }
+    val type: Int
 
     /**
      * @return The character position (starting with 0) of the input where the error occurs.
      */
-    public int getPosition() {
-        return position;
+    val position: Int
+    private val token: String?
+
+    constructor(position: Int, token: String?) : super("Unexpected token " + token + " at position " + position) {
+        this.position = position
+        this.type = UNEXPECTED_TOKEN
+        this.token = token
+    }
+
+    constructor(position: Int, cause: Throwable?) : super("Unexpected exception at position " + position, cause) {
+        this.position = position
+        this.type = UNEXPECTED_EXCEPTION
+        this.token = null
     }
 
     /**
-     * @return the unexpected token, or null if {@code type} is {@link #UNEXPECTED_EXCEPTION}
+     * @return the unexpected token, or null if `type` is [.UNEXPECTED_EXCEPTION]
      */
-    public Object getToken() {
-        return token;
+    fun getToken(): Any? {
+        return token
+    }
+
+    companion object {
+        const val UNEXPECTED_TOKEN: Int = 0
+        const val UNEXPECTED_EXCEPTION: Int = 1
     }
 }

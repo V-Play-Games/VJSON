@@ -13,128 +13,125 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+import java.util.*
+import java.util.function.*
+import java.util.function.Function
 
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
-import java.util.function.Function;
+interface JSONContainer<T> {
+    fun get(t: T?): JSONValue
 
-public interface JSONContainer<T> {
-    JSONValue get(T t);
-
-    default boolean isNull(T index) {
-        return get(index).isNull();
+    fun isNull(index: T?): Boolean {
+        return get(index).isNull()
     }
 
-    default boolean isType(T index, JSONValue.Type type) {
-        return get(index).getType() == type;
+    fun isType(index: T?, type: JSONValue.Type?): Boolean {
+        return get(index).getType() == type
     }
 
-    default Optional<JSONValue> opt(T t) {
-        return Optional.of(get(t)).filter(o -> !o.isNull());
+    fun opt(t: T?): Optional<JSONValue?> {
+        return Optional.of<JSONValue?>(get(t)).filter(Predicate { o: JSONValue? -> !o!!.isNull() })
     }
 
-    default <V> V get(T t, V def, Function<JSONValue, V> convertor) {
-        JSONValue val = get(t);
-        return val.isNull() ? def : convertor.apply(val);
+    fun <V> get(t: T?, def: V?, convertor: Function<JSONValue?, V?>): V? {
+        val `val` = get(t)
+        return if (`val`.isNull()) def else convertor.apply(`val`)
     }
 
-    default boolean getBoolean(T t) {
-        return get(t).toBoolean();
+    fun getBoolean(t: T?): Boolean {
+        return get(t).toBoolean()
     }
 
-    default boolean getBoolean(T t, boolean def) {
-        return get(t, def, JSONValue::toBoolean);
+    fun getBoolean(t: T?, def: Boolean): Boolean {
+        return get<Boolean?>(t, def, java.util.function.Function { obj: JSONValue? -> obj.toBoolean() })!!
     }
 
-    default Optional<Boolean> optBoolean(T t) {
-        return opt(t).map(JSONValue::toBoolean);
+    fun optBoolean(t: T?): Optional<Boolean?> {
+        return opt(t).map<Boolean?>(Function { obj: JSONValue? -> obj!!.toBoolean() })
     }
 
-    default Number getNumber(T t) {
-        return get(t).toNumber();
+    fun getNumber(t: T?): Number? {
+        return get(t).toNumber()
     }
 
-    default Number getNumber(T t, Number def) {
-        return get(t, def, JSONValue::toNumber);
+    fun getNumber(t: T?, def: Number?): Number? {
+        return get<Number?>(t, def, Function { obj: JSONValue? -> obj!!.toNumber() })
     }
 
-    default Optional<Number> optNumber(T t) {
-        return opt(t).map(JSONValue::toNumber);
+    fun optNumber(t: T?): Optional<Number?> {
+        return opt(t).map<Number?>(Function { obj: JSONValue? -> obj!!.toNumber() })
     }
 
-    default int getInt(T t) {
-        return get(t).toInt();
+    fun getInt(t: T?): Int {
+        return get(t).toInt()
     }
 
-    default int getInt(T t, int def) {
-        return getNumber(t, def).intValue();
+    fun getInt(t: T?, def: Int): Int {
+        return getNumber(t, def).intValue()
     }
 
-    default OptionalInt optInt(T t) {
-        return opt(t).stream().mapToInt(JSONValue::toInt).findFirst();
+    fun optInt(t: T?): OptionalInt {
+        return opt(t).stream().mapToInt(ToIntFunction { obj: JSONValue? -> obj!!.toInt() }).findFirst()
     }
 
-    default long getLong(T t) {
-        return get(t).toLong();
+    fun getLong(t: T?): Long {
+        return get(t).toLong()
     }
 
-    default long getLong(T t, long def) {
-        return getNumber(t, def).longValue();
+    fun getLong(t: T?, def: Long): Long {
+        return getNumber(t, def).longValue()
     }
 
-    default OptionalLong optLong(T t) {
-        return opt(t).stream().mapToLong(JSONValue::toLong).findFirst();
+    fun optLong(t: T?): OptionalLong {
+        return opt(t).stream().mapToLong(ToLongFunction { obj: JSONValue? -> obj!!.toLong() }).findFirst()
     }
 
-    default double getDouble(T t) {
-        return get(t).toLong();
+    fun getDouble(t: T?): Double {
+        return get(t).toLong().toDouble()
     }
 
-    default double getDouble(T t, long def) {
-        return getNumber(t, def).doubleValue();
+    fun getDouble(t: T?, def: Long): Double {
+        return getNumber(t, def).doubleValue()
     }
 
-    default OptionalDouble optDouble(T t) {
-        return opt(t).stream().mapToDouble(JSONValue::toDouble).findFirst();
+    fun optDouble(t: T?): OptionalDouble {
+        return opt(t).stream().mapToDouble(ToDoubleFunction { obj: JSONValue? -> obj!!.toDouble() }).findFirst()
     }
 
-    default String getString(T t) {
-        return get(t).toString();
+    fun getString(t: T?): String? {
+        return get(t).toString()
     }
 
-    default String getString(T t, String def) {
-        return get(t, def, JSONValue::toString);
+    fun getString(t: T?, def: String?): String? {
+        return get<String?>(t, def, Function { obj: JSONValue? -> obj.toString() })
     }
 
-    default Optional<String> optString(T t) {
-        return opt(t).map(JSONValue::toString);
+    fun optString(t: T?): Optional<String?> {
+        return opt(t).map<String?>(Function { obj: JSONValue? -> obj.toString() })
     }
 
-    default JSONObject getObject(T t) {
-        return get(t).toObject();
+    fun getObject(t: T?): JSONObject? {
+        return get(t).toObject()
     }
 
-    default JSONObject getObject(T t, JSONObject def) {
-        return get(t, def, JSONValue::toObject);
+    fun getObject(t: T?, def: JSONObject?): JSONObject? {
+        return get<JSONObject?>(t, def, Function { obj: JSONValue? -> obj!!.toObject() })
     }
 
-    default Optional<JSONObject> optObject(T t) {
-        return opt(t).map(JSONValue::toObject);
+    fun optObject(t: T?): Optional<JSONObject?> {
+        return opt(t).map<JSONObject?>(Function { obj: JSONValue? -> obj!!.toObject() })
     }
 
-    default JSONArray getArray(T t) {
-        return get(t).toArray();
+    fun getArray(t: T?): JSONArray? {
+        return get(t).toArray()
     }
 
-    default JSONArray getArray(T t, JSONArray def) {
-        return get(t, def, JSONValue::toArray);
+    fun getArray(t: T?, def: JSONArray?): JSONArray? {
+        return get<JSONArray?>(t, def, Function { obj: JSONValue? -> obj!!.toArray() })
     }
 
-    default Optional<JSONArray> optArray(T t) {
-        return opt(t).map(JSONValue::toArray);
+    fun optArray(t: T?): Optional<JSONArray?> {
+        return opt(t).map<JSONArray?>(Function { obj: JSONValue? -> obj!!.toArray() })
     }
 }

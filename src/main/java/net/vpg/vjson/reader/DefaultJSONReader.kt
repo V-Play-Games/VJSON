@@ -13,211 +13,191 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.reader
 
-package net.vpg.vjson.reader;
+import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.reader.JSONReader.TokenType
+import java.io.*
+import java.net.URL
 
-import java.io.*;
-import java.net.URL;
+class DefaultJSONReader : AbstractJSONReader {
+    private val close: Boolean
+    private val isStringBased: Boolean
+    private var builder: StringBuilder? = StringBuilder()
+    private var reader: Reader? = null
+    private var totalPos = -1
+    private var position = -1
+    private var lastPos = 0
+    private var buffer: CharArray?
 
-import net.vpg.vjson.parser.ParseException;
+    constructor(f: File) : this(FileReader(f))
 
-import static net.vpg.vjson.reader.JSONReader.TokenType.*;
+    constructor(url: URL) : this(url.openStream(), true)
 
-public class DefaultJSONReader extends AbstractJSONReader {
-    private final boolean close;
-    private final boolean isStringBased;
-    private StringBuilder builder = new StringBuilder();
-    private Reader reader;
-    private int totalPos = -1;
-    private int position = -1;
-    private int lastPos;
-    private char[] buffer;
+    @JvmOverloads
+    constructor(`in`: InputStream, close: Boolean = false) : this(InputStreamReader(`in`), close)
 
-    public DefaultJSONReader(File f) throws FileNotFoundException {
-        this(new FileReader(f));
+    @JvmOverloads
+    constructor(`in`: Reader?, close: Boolean = false) {
+        buffer = CharArray(1048576)
+        reader = `in`
+        this.close = close
+        isStringBased = false
+        buffer()
     }
 
-    public DefaultJSONReader(URL url) throws IOException {
-        this(url.openStream(), true);
+    constructor(s: String) {
+        buffer = s.toCharArray()
+        isStringBased = true
+        close = false
+        lastPos = s.length
     }
 
-    public DefaultJSONReader(InputStream in) {
-        this(in, false);
-    }
-
-    public DefaultJSONReader(InputStream in, boolean close) {
-        this(new InputStreamReader(in), close);
-    }
-
-    public DefaultJSONReader(Reader in) {
-        this(in, false);
-    }
-
-    public DefaultJSONReader(Reader in, boolean close) {
-        buffer = new char[1048576];
-        reader = in;
-        this.close = close;
-        isStringBased = false;
-        buffer();
-    }
-
-    public DefaultJSONReader(String s) {
-        buffer = s.toCharArray();
-        isStringBased = true;
-        close = false;
-        lastPos = s.length();
-    }
-
-    private boolean buffer() {
+    private fun buffer(): Boolean {
         try {
-            position = -1;
-            int numRead = reader.read(buffer, 0, buffer.length);
+            position = -1
+            val numRead = reader!!.read(buffer, 0, buffer!!.size)
             if (numRead == -1) {
-                return true;
+                return true
             }
-            lastPos = numRead;
-            return false;
-        } catch (IOException exc) {
-            throw new ParseException(position, exc);
+            lastPos = numRead
+            return false
+        } catch (exc: IOException) {
+            throw ParseException(position, exc)
         }
     }
 
-    private char nextChar() {
-        if (isEOF())
-            error();
-        ++totalPos;
-        return buffer[++position];
+    private fun nextChar(): Char {
+        if (this.isEOF) error<Any?>()
+        ++totalPos
+        return buffer!![++position]
     }
 
-    @Override
-    public int getPosition() {
-        checkOpen();
-        return totalPos;
+    override fun getPosition(): Int {
+        checkOpen()
+        return totalPos
     }
 
-    private void decrementPosition() {
-        totalPos--;
-        position--;
+    private fun decrementPosition() {
+        totalPos--
+        position--
     }
 
-    private boolean isEOF() {
-        return position + 1 == lastPos && (isStringBased || buffer());
-    }
+    private val isEOF: Boolean
+        get() = position + 1 == lastPos && (isStringBased || buffer())
 
-    protected TokenType getNextTokenType0() {
-        if (isEOF())
-            return EOF;
-        char c = nextChar();
-        if (" \0\t\r\n".indexOf(c) >= 0)
-            return getNextTokenType0();
-        if (Character.isDigit(c) || c == '-') {
-            currentToken = getNumber();
-            return NUMBER;
-        }
-        currentToken = switch (c) {
-            case '"' -> getString();
-            case 't' -> checkToken(true);
-            case 'f' -> checkToken(false);
-            case 'n' -> checkToken(null);
-            default -> c;
-        };
-        return switch (c) {
-            case '{' -> OBJECT_START;
-            case '}' -> OBJECT_END;
-            case '[' -> ARRAY_START;
-            case ']' -> ARRAY_END;
-            case ',' -> COMMA;
-            case ':' -> COLON;
-            case '"' -> STRING;
-            case 't' -> TRUE;
-            case 'f' -> FALSE;
-            case 'n' -> NULL;
-            default -> error();
-        };
-    }
-
-    private String getString() {
-        while (true) {
-            char c = nextChar();
-            switch (c) {
-                case '\b':
-                case '\f':
-                case '\n':
-                case '\r':
-                case '\t':
-                    error();
-                case '"':
-                    return getBuilderString();
-                case '\\':
-                    c = switch (nextChar()) {
-                        case '"' -> '\"';
-                        case '\\' -> '\\';
-                        case '/' -> '/';
-                        case 'b' -> '\b';
-                        case 'f' -> '\f';
-                        case 'n' -> '\n';
-                        case 'r' -> '\r';
-                        case 't' -> '\t';
-                        case 'u' -> (char) (hex() << 12 | hex() << 8 | hex() << 4 | hex());
-                        default -> error();
-                    };
-                default:
-                    builder.append(c);
+    val nextTokenType0: TokenType?
+        get() {
+            if (this.isEOF) return TokenType.EOF
+            val c = nextChar()
+            if (" \u0000\t\r\n".indexOf(c) >= 0) return field
+            if (Character.isDigit(c) || c == '-') {
+                currentToken = this.number
+                return TokenType.NUMBER
+            }
+            currentToken = when (c) {
+                '"' -> this.string
+                't' -> checkToken(true)
+                'f' -> checkToken(false)
+                'n' -> checkToken(null)
+                else -> c
+            }
+            return when (c) {
+                '{' -> TokenType.OBJECT_START
+                '}' -> TokenType.OBJECT_END
+                '[' -> TokenType.ARRAY_START
+                ']' -> TokenType.ARRAY_END
+                ',' -> TokenType.COMMA
+                ':' -> TokenType.COLON
+                '"' -> TokenType.STRING
+                't' -> TokenType.TRUE
+                'f' -> TokenType.FALSE
+                'n' -> TokenType.NULL
+                else -> error<TokenType?>()
             }
         }
-    }
 
-    private int hex() {
-        int c = Character.digit(nextChar(), 16);
-        if (c == -1) error();
-        return c;
-    }
+    private val string: String
+        get() {
+            while (true) {
+                var c = nextChar()
+                when (c) {
+                    '\b', '\f', '\n', '\r', '\t' -> {
+                        error<Any?>()
+                        return this.builderString
+                    }
 
-    private Number getNumber() {
-        decrementPosition();
-        char c;
-        while ("0123456789.+-eE".indexOf(c = nextChar()) >= 0) {
-            builder.append(c);
+                    '"' -> return this.builderString
+                    '\\' -> {
+                        c = when (nextChar()) {
+                            '"' -> '\"'
+                            '\\' -> '\\'
+                            '/' -> '/'
+                            'b' -> '\b'
+                            'f' -> '\f'
+                            'n' -> '\n'
+                            'r' -> '\r'
+                            't' -> '\t'
+                            'u' -> (hex() shl 12 or (hex() shl 8) or (hex() shl 4) or hex()).toChar()
+                            else -> error<kotlin.Char?>()
+                        }!!
+                        builder!!.append(c)
+                    }
+
+                    else -> builder!!.append(c)
+                }
+            }
         }
-        decrementPosition();
-        String s = getBuilderString();
-        // Don't use ternary to avoid casting to Double
-        if (s.contains("."))
-            return Double.parseDouble(s);
-        else
-            return Long.parseLong(s);
+
+    private fun hex(): Int {
+        val c = nextChar().digitToIntOrNull(16) ?: -1
+        if (c == -1) error<Any?>()
+        return c
     }
 
-    private String getBuilderString() {
-        String tor = builder.toString();
-        builder.setLength(0);
-        return tor;
+    private val number: Number
+        get() {
+            decrementPosition()
+            var c: Char
+            while ("0123456789.+-eE".indexOf(nextChar().also { c = it }) >= 0) {
+                builder!!.append(c)
+            }
+            decrementPosition()
+            val s = this.builderString
+            // Don't use ternary to avoid casting to Double
+            if (s.contains(".")) return s.toDouble()
+            else return s.toLong()
+        }
+
+    private val builderString: String
+        get() {
+            val tor = builder.toString()
+            builder!!.setLength(0)
+            return tor
+        }
+
+    private fun checkToken(token: Any?): Any? {
+        decrementPosition()
+        val s = token.toString()
+        for (i in 0..<s.length) if (s.get(i) != nextChar()) error<Any?>()
+        return token
     }
 
-    private Object checkToken(Object token) {
-        decrementPosition();
-        String s = String.valueOf(token);
-        for (int i = 0; i < s.length(); i++)
-            if (s.charAt(i) != nextChar())
-                error();
-        return token;
+    @Throws(IOException::class)
+    override fun close() {
+        if (lastPos == -1) return
+        lastPos = -1
+        totalPos = 0
+        position = 0
+        currentTokenType = null
+        builder = null
+        currentToken = null
+        buffer = null
+        if (close) reader!!.close()
+        reader = null
     }
 
-    @Override
-    public void close() throws IOException {
-        if (lastPos == -1) return;
-        lastPos = -1;
-        totalPos = 0;
-        position = 0;
-        currentTokenType = null;
-        builder = null;
-        currentToken = null;
-        buffer = null;
-        if (close) reader.close();
-        reader = null;
-    }
-
-    protected void checkOpen() {
-        if (lastPos == -1) throw new IllegalStateException("This JSONReader has already been closed!");
+    override fun checkOpen() {
+        check(lastPos != -1) { "This JSONReader has already been closed!" }
     }
 }

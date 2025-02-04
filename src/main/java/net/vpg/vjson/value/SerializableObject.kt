@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+interface SerializableObject : DeserializableValue {
+    fun toObject(): JSONObject?
 
-public interface SerializableObject extends DeserializableValue {
-    JSONObject toObject();
-
-    @Override
-    default String deserialize() {
-        return toObject().deserialize();
+    override fun deserialize(): String? {
+        return toObject()!!.deserialize()
     }
 }

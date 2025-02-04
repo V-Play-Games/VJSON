@@ -13,151 +13,180 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
+import net.vpg.vjson.parser.JSONParser.parse
+import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.pretty.PrettyPrinter
+import net.vpg.vjson.reader.JSONReader
+import java.io.*
+import java.lang.String
+import java.net.URL
+import java.util.Map
+import java.util.function.BiConsumer
+import java.util.function.BinaryOperator
+import java.util.function.Function
+import java.util.function.Supplier
+import java.util.stream.Collector
+import java.util.stream.Collectors
+import kotlin.Any
+import kotlin.Boolean
+import kotlin.Int
+import kotlin.Throws
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.MutableIterator
+import kotlin.collections.MutableMap
+import kotlin.collections.iterator
+import kotlin.collections.map
+import kotlin.collections.remove
+import kotlin.io.iterator
+import kotlin.map
+import kotlin.sequences.map
+import kotlin.text.iterator
+import kotlin.text.map
 
-import java.io.*;
-import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
+class JSONObject() : JSONValue(), SerializableObject, JSONContainer<kotlin.String?> {
+    private val map: MutableMap<String?, JSONValue?>
 
-import net.vpg.vjson.parser.ParseException;
-import net.vpg.vjson.pretty.PrettyPrintConfig;
-import net.vpg.vjson.pretty.PrettyPrinter;
-import net.vpg.vjson.reader.JSONReader;
-
-public final class JSONObject extends JSONValue implements SerializableObject, JSONContainer<String> {
-    private final Map<String, JSONValue> map;
-
-    public JSONObject() {
-        map = new LinkedHashMap<>();
+    init {
+        map = LinkedHashMap<String?, JSONValue?>()
     }
 
-    private JSONObject(Map<?, ?> map) {
-        this();
-        putAll(map);
+    private constructor(map: MutableMap<*, *>) : this() {
+        putAll(map)
     }
 
-    public static JSONObject of(Map<?, ?> map) {
-        return new JSONObject(map);
+    fun size(): Int {
+        return map.size()
     }
 
-    public static JSONObject parse(Reader in) throws ParseException {
-        return getParser().parse(in).toObject();
+    val isEmpty: Boolean
+        get() = map.isEmpty()
+
+    override fun get(key: String?): JSONValue? {
+        return JSONValue.Companion.of(map.get(key))
     }
 
-    public static JSONObject parse(URL url) throws ParseException, IOException {
-        return getParser().parse(url).toObject();
+    fun put(key: String?, `val`: Any?): JSONObject {
+        map.put(key, JSONValue.Companion.of(`val`))
+        return this
     }
 
-    public static JSONObject parse(InputStream in) throws ParseException {
-        return getParser().parse(in).toObject();
+    fun putAll(map: MutableMap<*, *>): JSONObject {
+        map.forEach { k: Any?, v: Any? -> put(String.valueOf(k), v) }
+        return this
     }
 
-    public static JSONObject parse(String s) throws ParseException {
-        return getParser().parse(s).toObject();
+    fun putAll(`object`: JSONObject): JSONObject {
+        map.putAll(`object`.map)
+        return this
     }
 
-    public static JSONObject parse(File f) throws ParseException, FileNotFoundException {
-        return getParser().parse(f).toObject();
+    fun remove(key: kotlin.String?): JSONObject {
+        map.remove(key)
+        return this
     }
 
-    public static JSONObject parse(JSONReader s) throws ParseException {
-        return getParser().parse(s).toObject();
+    fun toMap(): MutableMap<kotlin.String?, JSONValue?> {
+        return map
     }
 
-    public static <T> Collector<T, ?, JSONObject> collector(Function<T, String> keyMapper, Function<T, ?> valueMapper) {
-        return Collector.of(JSONObject::new,
-            (obj, e) -> obj.put(keyMapper.apply(e), valueMapper.apply(e)),
-            JSONObject::putAll);
+    fun <T> map(converter: Function<JSONObject?, T?>): T? {
+        return converter.apply(this)
     }
 
-    public int size() {
-        return map.size();
-    }
-
-    public boolean isEmpty() {
-        return map.isEmpty();
-    }
-
-    public JSONValue get(String key) {
-        return JSONValue.of(map.get(key));
-    }
-
-    public JSONObject put(String key, Object val) {
-        map.put(key, JSONValue.of(val));
-        return this;
-    }
-
-    public JSONObject putAll(Map<?, ?> map) {
-        map.forEach((k, v) -> put(String.valueOf(k), v));
-        return this;
-    }
-
-    public JSONObject putAll(JSONObject object) {
-        map.putAll(object.map);
-        return this;
-    }
-
-    public JSONObject remove(String key) {
-        map.remove(key);
-        return this;
-    }
-
-    public Map<String, JSONValue> toMap() {
-        return map;
-    }
-
-    public <T> T map(Function<JSONObject, T> converter) {
-        return converter.apply(this);
-    }
-
-    @Override
-    public String deserialize() {
+    override fun deserialize(): kotlin.String {
         return map.entrySet()
             .stream()
-            .map(e -> "\"" + JSONString.escape(e.getKey()) + "\":" + e.getValue().deserialize())
-            .collect(Collectors.joining(",", "{", "}"));
+            .map<kotlin.String?>(Function { e: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? ->
+                "\"" + JSONString.Companion.escape(
+                    e.getKey()
+                ) + "\":" + e.getValue().deserialize()
+            })
+            .collect(Collectors.joining(",", "{", "}"))
     }
 
-    @Override
-    public Type getType() {
-        return Type.OBJECT;
+    override fun getType(): Type {
+        return Type.OBJECT
     }
 
-    @Override
-    public Object getRaw() {
-        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getRaw()));
+    override fun getRaw(): Any {
+        return map.entrySet().stream().collect(
+            Collectors.toMap(
+                Function { Map.Entry.getKey() },
+                Function { entry: MutableMap.MutableEntry<kotlin.String?, JSONValue?>? -> entry.getValue().getRaw() })
+        )
     }
 
-    @Override
-    public JSONObject toObject() {
-        return this;
+    override fun toObject(): JSONObject {
+        return this
     }
 
-    @Override
-    public void toPrettyString(PrettyPrinter printer) {
-        PrettyPrintConfig config = printer.getConfig();
-        printer.print("{");
-        printer.nextLine(config.isObjectContentsOnNewLine(), +1, config.isSpaceWithinBraces());
-        var iterator = map.entrySet().iterator();
+    override fun toPrettyString(printer: PrettyPrinter) {
+        val config = printer.getConfig()
+        printer.print("{")
+        printer.nextLine(config.isObjectContentsOnNewLine(), +1, config.isSpaceWithinBraces())
+        val iterator: MutableIterator<MutableMap.MutableEntry<kotlin.String?, JSONValue?>?> = map.entrySet().iterator()
         while (iterator.hasNext()) {
-            var next = iterator.next();
-            printer.print("\"" + JSONString.escape(next.getKey()) + "\"");
-            printer.spaceIf(config.isSpaceBeforeColon());
-            printer.print(":");
-            printer.spaceIf(config.isSpaceAfterColon());
-            next.getValue().toPrettyString(printer);
-            if (!iterator.hasNext())
-                break;
-            printer.spaceIf(config.isSpaceBeforeComma());
-            printer.print(",");
-            printer.nextLine(config.isObjectContentsOnNewLine(), 0, config.isSpaceAfterComma());
+            val next: MutableMap.MutableEntry<kotlin.String?, JSONValue?> = iterator.next()!!
+            printer.print("\"" + JSONString.Companion.escape(next.getKey()) + "\"")
+            printer.spaceIf(config.isSpaceBeforeColon())
+            printer.print(":")
+            printer.spaceIf(config.isSpaceAfterColon())
+            next.getValue().toPrettyString(printer)
+            if (!iterator.hasNext()) break
+            printer.spaceIf(config.isSpaceBeforeComma())
+            printer.print(",")
+            printer.nextLine(config.isObjectContentsOnNewLine(), 0, config.isSpaceAfterComma())
         }
-        printer.nextLine(config.isObjectContentsOnNewLine(), -1, config.isSpaceWithinBraces());
-        printer.print("}");
+        printer.nextLine(config.isObjectContentsOnNewLine(), -1, config.isSpaceWithinBraces())
+        printer.print("}")
+    }
+
+    companion object {
+        fun of(map: MutableMap<*, *>): JSONObject {
+            return JSONObject(map)
+        }
+
+        @Throws(ParseException::class)
+        fun parse(`in`: Reader?): JSONObject? {
+            return JSONValue.Companion.getParser().parse(`in`).toObject()
+        }
+
+        @JvmStatic
+        @Throws(ParseException::class, IOException::class)
+        fun parse(url: URL): JSONObject? {
+            return JSONValue.Companion.getParser().parse(url).toObject()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(`in`: InputStream?): JSONObject? {
+            return JSONValue.Companion.getParser().parse(`in`).toObject()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: kotlin.String): JSONObject? {
+            return JSONValue.Companion.getParser().parse(s).toObject()
+        }
+
+        @Throws(ParseException::class, FileNotFoundException::class)
+        fun parse(f: File?): JSONObject? {
+            return JSONValue.Companion.getParser().parse(f).toObject()
+        }
+
+        @Throws(ParseException::class)
+        fun parse(s: JSONReader): JSONObject? {
+            return JSONValue.Companion.getParser().parse(s).toObject()
+        }
+
+        fun <T> collector(
+            keyMapper: Function<T?, kotlin.String?>,
+            valueMapper: Function<T?, *>
+        ): Collector<T?, *, JSONObject?> {
+            return Collector.of<T?, JSONObject?>(
+                Supplier { JSONObject() },
+                BiConsumer { obj: JSONObject?, e: T? -> obj!!.put(keyMapper.apply(e), valueMapper.apply(e)) },
+                BinaryOperator { obj: JSONObject?, `object`: JSONObject -> obj!!.putAll(`object`) })
+        }
     }
 }

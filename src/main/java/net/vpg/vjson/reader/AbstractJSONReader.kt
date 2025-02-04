@@ -13,39 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.reader
 
-package net.vpg.vjson.reader;
+import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.reader.JSONReader.TokenType
 
-import net.vpg.vjson.parser.ParseException;
+abstract class AbstractJSONReader : JSONReader {
+    protected var currentToken: Any? = null
+    protected var currentTokenType: TokenType? = null
 
-public abstract class AbstractJSONReader implements JSONReader {
-    protected Object currentToken;
-    protected TokenType currentTokenType;
-
-    @Override
-    public TokenType getCurrentTokenType() {
-        checkOpen();
-        return currentTokenType;
+    override fun getCurrentTokenType(): TokenType? {
+        checkOpen()
+        return currentTokenType
     }
 
-    @Override
-    public TokenType getNextTokenType() {
-        checkOpen();
-        return currentTokenType = getNextTokenType0();
+    override fun getNextTokenType(): TokenType? {
+        checkOpen()
+        return this.nextTokenType0.also { currentTokenType = it }
     }
 
-    @Override
-    public Object getCurrentToken() {
-        checkOpen();
-        return currentToken;
+    override fun getCurrentToken(): Any? {
+        checkOpen()
+        return currentToken
     }
 
-    public Object getNextToken() {
-        getNextTokenType();
-        return currentToken;
+    override fun getNextToken(): Any? {
+        getNextTokenType()
+        return currentToken
     }
 
-    protected abstract TokenType getNextTokenType0() throws ParseException;
+    @get:Throws(ParseException::class)
+    protected abstract val nextTokenType0: TokenType?
 
-    protected abstract void checkOpen();
+    protected abstract fun checkOpen()
 }

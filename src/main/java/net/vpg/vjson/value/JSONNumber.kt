@@ -13,44 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.vpg.vjson.value
 
-package net.vpg.vjson.value;
-
-public final class JSONNumber extends JSONValue {
-    private final Number value;
-
-    private JSONNumber(Number value) {
-        this.value = value;
+class JSONNumber private constructor(private val value: Number) : JSONValue() {
+    override fun equals(o: Any?): Boolean {
+        return o is JSONNumber && o.value.doubleValue() == this.value.doubleValue()
     }
 
-    public static JSONNumber of(Number value) {
-        if (value == null)
-            throw new IllegalArgumentException("value should not be null");
-        return new JSONNumber(value);
+    override fun getType(): Type {
+        return Type.NUMBER
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof JSONNumber && ((JSONNumber) o).value.doubleValue() == this.value.doubleValue();
+    override fun toNumber(): Number {
+        return value
     }
 
-    @Override
-    public Type getType() {
-        return Type.NUMBER;
+    override fun getRaw(): Any {
+        return value
     }
 
-    @Override
-    public Number toNumber() {
-        return value;
+    override fun deserialize(): String? {
+        return value.toString()
     }
 
-    @Override
-    public Object getRaw() {
-        return value;
-    }
-
-    @Override
-    public String deserialize() {
-        return value.toString();
+    companion object {
+        fun of(value: Number): JSONNumber {
+            requireNotNull(value) { "value should not be null" }
+            return JSONNumber(value)
+        }
     }
 }
