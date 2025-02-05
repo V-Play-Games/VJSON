@@ -26,33 +26,6 @@ import static net.vpg.vjson.reader.JSONReader.TokenType.*;
 import net.vpg.vjson.parser.ParseException;
 
 public class DefaultJSONReader extends AbstractJSONReader {
-    private static final Map<Character, TokenType> typeMap = Map.of(
-        '{', OBJECT_START,
-        '}', OBJECT_END,
-        '[', ARRAY_START,
-        ']', ARRAY_END,
-        ',', COMMA,
-        ':', COLON,
-        '"', STRING,
-        't', TRUE,
-        'f', FALSE,
-        'n', NULL
-    );
-    private static final Map<Character, Function<DefaultJSONReader, Object>> tokenMap = Map.of(
-        '"', DefaultJSONReader::getString,
-        't', reader -> {
-            reader.checkToken("true");
-            return true;
-        },
-        'f', reader -> {
-            reader.checkToken("false");
-            return false;
-        },
-        'n', reader -> {
-            reader.checkToken("null");
-            return null;
-        }
-    );
     private final boolean close;
     private final boolean isStringBased;
     private StringBuilder builder = new StringBuilder();
@@ -137,13 +110,40 @@ public class DefaultJSONReader extends AbstractJSONReader {
         if (isEOF())
             return EOF;
         char c = nextChar();
+        if (" \0\t\r\n".indexOf(c) >= 0)
+            return getNextTokenType0();
         if (Character.isDigit(c) || c == '-') {
             currentToken = getNumber();
             return NUMBER;
         }
+        Map<Character, Function<DefaultJSONReader, Object>> tokenMap = Map.of(
+                '"', DefaultJSONReader::getString,
+                't', reader -> {
+                    reader.checkToken("true");
+                    return true;
+                },
+                'f', reader -> {
+                    reader.checkToken("false");
+                    return false;
+                },
+                'n', reader -> {
+                    reader.checkToken("null");
+                    return null;
+                }
+        );
         currentToken = tokenMap.getOrDefault(c, r -> c).apply(this);
-        if (" \0\t\r\n".indexOf(c) >= 0)
-            return getNextTokenType0();
+        Map<Character, TokenType> typeMap = Map.of(
+                '{', OBJECT_START,
+                '}', OBJECT_END,
+                '[', ARRAY_START,
+                ']', ARRAY_END,
+                ',', COMMA,
+                ':', COLON,
+                '"', STRING,
+                't', TRUE,
+                'f', FALSE,
+                'n', NULL
+        );
         TokenType type = typeMap.get(c);
         if (type == null)
             error();
