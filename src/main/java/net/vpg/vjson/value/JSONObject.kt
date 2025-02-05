@@ -15,10 +15,12 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.ParseException
+import net.vpg.vjson.parser.JSONParser
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
-import java.io.*
+import java.io.File
+import java.io.InputStream
+import java.io.Reader
 import java.net.URL
 import java.util.stream.Collector
 
@@ -84,18 +86,18 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
     companion object {
         fun of(map: Map<*, *>) = JSONObject(map)
 
-        fun parse(reader: Reader) = parser?.parse(reader)?.toObject()
+        fun parse(reader: Reader) = JSONParser.parse(reader).toObject()
 
         @JvmStatic
-        fun parse(url: URL) = parser?.parse(url)?.toObject()
+        fun parse(url: URL) = JSONParser.parse(url).toObject()
 
-        fun parse(stream: InputStream) = parser?.parse(stream)?.toObject()
+        fun parse(stream: InputStream) = JSONParser.parse(stream).toObject()
 
-        fun parse(s: String) = parser?.parse(s)?.toObject()
+        fun parse(s: String) = JSONParser.parse(s).toObject()
 
-        fun parse(f: File) = parser?.parse(f)?.toObject()
+        fun parse(f: File) = JSONParser.parse(f).toObject()
 
-        fun parse(s: JSONReader) = parser?.parse(s)?.toObject()
+        fun parse(s: JSONReader) = JSONParser.parse(s).toObject()
 
         fun <T> collector(keyMapper: (T) -> String, valueMapper: (T) -> Any?) = Collector.of<T, JSONObject>(
             { JSONObject() },

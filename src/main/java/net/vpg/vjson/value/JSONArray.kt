@@ -15,6 +15,7 @@
  */
 package net.vpg.vjson.value
 
+import net.vpg.vjson.parser.JSONParser
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
 import java.io.File
@@ -86,17 +87,17 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
     companion object {
         fun of(list: List<*>) = JSONArray(list)
 
-        fun parse(reader: Reader) = parser?.parse(reader)?.toArray()
+        fun parse(reader: Reader) = JSONParser.parse(reader).toArray()
 
-        fun parse(url: URL) = parser?.parse(url)?.toArray()
+        fun parse(url: URL) = JSONParser.parse(url).toArray()
 
-        fun parse(stream: InputStream) = parser?.parse(stream)?.toArray()
+        fun parse(stream: InputStream) = JSONParser.parse(stream).toArray()
 
-        fun parse(s: String) = parser?.parse(s)?.toArray()
+        fun parse(s: String) = JSONParser.parse(s).toArray()
 
-        fun parse(f: File) = parser?.parse(f)?.toArray()
+        fun parse(f: File) = JSONParser.parse(f).toArray()
 
-        fun parse(s: JSONReader) = parser?.parse(s)?.toArray()
+        fun parse(s: JSONReader) = JSONParser.parse(s).toArray()
 
         fun <T> collector() = Collector.of<T, JSONArray>(
             { JSONArray() },

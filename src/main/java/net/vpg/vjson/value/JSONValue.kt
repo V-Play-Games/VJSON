@@ -58,25 +58,20 @@ abstract class JSONValue : DeserializableValue {
     }
 
     companion object {
-        @JvmStatic
-        protected var parser: JSONParser? = null
-            get() = if (field == null) JSONParser().also { field = it } else field
-            private set
+        fun parse(reader: Reader) = JSONParser.parse(reader)
 
-        fun parse(reader: Reader) = parser!!.parse(reader)
+        fun parse(url: URL) = JSONParser.parse(url)
 
-        fun parse(url: URL) = parser!!.parse(url)
+        fun parse(stream: InputStream) = JSONParser.parse(stream)
 
-        fun parse(stream: InputStream) = parser!!.parse(stream)
+        fun parse(s: String) = JSONParser.parse(s)
 
-        fun parse(s: String) = parser!!.parse(s)
+        fun parse(f: File) = JSONParser.parse(f)
 
-        fun parse(f: File) = parser!!.parse(f)
-
-        fun parse(s: JSONReader) = parser!!.parse(s)
+        fun parse(s: JSONReader) = JSONParser.parse(s)
 
         fun of(o: Any?) = when (o) {
-            null -> JSONNull.Companion.instance
+            null -> JSONNull
             is JSONValue -> o
             is List<*> -> JSONArray.of(o)
             is Map<*, *> -> JSONObject.of(o)

@@ -33,24 +33,18 @@ import java.net.URL
  *
  * @author Vaibhav Nargwani
  */
-class JSONParser {
-    @Throws(ParseException::class)
-    fun parse(s: String) = parse(JSONReader(s), true)
+object JSONParser {
+    fun parse(s: String) = parse(JSONReader(s))
 
-    fun parse(f: File) = parse(JSONReader(f), true)
+    fun parse(f: File) = parse(JSONReader(f))
 
-    fun parse(url: URL) = parse(JSONReader(url), true)
+    fun parse(url: URL) = parse(JSONReader(url))
 
-    fun parse(stream: InputStream) = parse(JSONReader(stream), true)
+    fun parse(stream: InputStream) = parse(JSONReader(stream))
 
-    fun parse(reader: Reader) = parse(JSONReader(reader), true)
+    fun parse(reader: Reader) = parse(JSONReader(reader))
 
-    @JvmOverloads
-    fun parse(reader: JSONReader, closeAfterParse: Boolean = false) = parseValue(reader).also {
-        if (closeAfterParse) {
-            reader.close()
-        }
-    }
+    fun parse(reader: JSONReader) = reader.use { parseValue(it) }
 
     private fun parseValue(reader: JSONReader): JSONValue =
         when (reader.currentTokenType ?: reader.getNextTokenType()) {

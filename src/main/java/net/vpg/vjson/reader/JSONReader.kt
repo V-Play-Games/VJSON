@@ -56,7 +56,7 @@ class JSONReader : Closeable {
     constructor(stream: InputStream, close: Boolean = false) : this(InputStreamReader(stream), close)
 
     @JvmOverloads
-    constructor(reader: Reader?, close: Boolean = false) {
+    constructor(reader: Reader, close: Boolean = false) {
         buffer = CharArray(1048576)
         this.reader = reader
         this.close = close

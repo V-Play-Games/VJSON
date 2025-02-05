@@ -15,7 +15,7 @@
  */
 package net.vpg.vjson.value
 
-class JSONNull private constructor() : JSONValue() {
+object JSONNull : JSONValue() {
     override val type = Type.NULL
     override val raw = null
 
@@ -26,8 +26,4 @@ class JSONNull private constructor() : JSONValue() {
     override val isNull = true
 
     override fun deserialize() = "null"
-
-    companion object {
-        val instance = JSONNull()
-    }
 }
