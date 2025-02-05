@@ -18,7 +18,5 @@ package net.vpg.vjson.value
 interface SerializableArray : DeserializableValue {
     fun toArray(): JSONArray
 
-    override fun deserialize(): String {
-        return toArray()!!.deserialize()
-    }
+    override fun deserialize() = toArray().deserialize()
 }

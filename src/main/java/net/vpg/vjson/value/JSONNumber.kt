@@ -19,22 +19,13 @@ class JSONNumber private constructor(private val value: Number) : JSONValue() {
     override val type = Type.NUMBER
     override val raw = value
 
-    override fun equals(o: Any?): Boolean {
-        return o is JSONNumber && o.value.toDouble() == this.value.toDouble()
-    }
+    override fun equals(other: Any?) = other is JSONNumber && other.value.toDouble() == this.value.toDouble()
 
-    override fun toNumber(): Number {
-        return value
-    }
+    override fun toNumber() = value
 
-    override fun deserialize(): String {
-        return value.toString()
-    }
+    override fun deserialize() = value.toString()
 
     companion object {
-        fun of(value: Number): JSONNumber {
-            requireNotNull(value) { "value should not be null" }
-            return JSONNumber(value)
-        }
+        fun of(value: Number) = JSONNumber(requireNotNull(value) { "value should not be null" })
     }
 }

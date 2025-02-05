@@ -16,67 +16,33 @@
 package net.vpg.vjson.pretty
 
 class PrettyPrintConfig {
-    var indent: String? = "  "
-        private set
-    var isSpaceWithinBraces: Boolean = false
-        private set
-    var isSpaceWithinBrackets: Boolean = false
-        private set
-    var isSpaceBeforeComma: Boolean = false
-        private set
-    var isSpaceAfterComma: Boolean = true
-        private set
-    var isSpaceBeforeColon: Boolean = false
-        private set
-    var isSpaceAfterColon: Boolean = true
-        private set
-    var isArrayContentsOnNewLine: Boolean = true
-        private set
-    var isObjectContentsOnNewLine: Boolean = true
-        private set
+    var indent = "  "
+    var isSpaceWithinBraces = false
+    var isSpaceWithinBrackets = false
+    var isSpaceBeforeComma = false
+    var isSpaceAfterComma = true
+    var isSpaceBeforeColon = false
+    var isSpaceAfterColon = true
+    var isArrayContentsOnNewLine = true
+    var isObjectContentsOnNewLine = true
 
-    fun setIndent(indent: String?): PrettyPrintConfig {
-        this.indent = indent
-        return this
-    }
+    fun setIndent(indent: String) = also { this.indent = indent }
 
-    fun setSpaceWithinBraces(spaceWithinBraces: Boolean): PrettyPrintConfig {
-        this.isSpaceWithinBraces = spaceWithinBraces
-        return this
-    }
+    fun setSpaceWithinBraces(spaceWithinBraces: Boolean) = also { isSpaceWithinBraces = spaceWithinBraces }
 
-    fun setSpaceWithinBrackets(spaceWithinBrackets: Boolean): PrettyPrintConfig {
-        this.isSpaceWithinBrackets = spaceWithinBrackets
-        return this
-    }
+    fun setSpaceWithinBrackets(spaceWithinBrackets: Boolean) = also { isSpaceWithinBrackets = spaceWithinBrackets }
 
-    fun setSpaceBeforeComma(spaceBeforeComma: Boolean): PrettyPrintConfig {
-        this.isSpaceBeforeComma = spaceBeforeComma
-        return this
-    }
+    fun setSpaceBeforeComma(spaceBeforeComma: Boolean) = also { isSpaceBeforeComma = spaceBeforeComma }
 
-    fun setSpaceAfterComma(spaceAfterComma: Boolean): PrettyPrintConfig {
-        this.isSpaceAfterComma = spaceAfterComma
-        return this
-    }
+    fun setSpaceAfterComma(spaceAfterComma: Boolean) = also { isSpaceAfterComma = spaceAfterComma }
 
-    fun setSpaceBeforeColon(spaceBeforeColon: Boolean): PrettyPrintConfig {
-        this.isSpaceBeforeColon = spaceBeforeColon
-        return this
-    }
+    fun setSpaceBeforeColon(spaceBeforeColon: Boolean) = also { isSpaceBeforeColon = spaceBeforeColon }
 
-    fun setSpaceAfterColon(spaceAfterColon: Boolean): PrettyPrintConfig {
-        this.isSpaceAfterColon = spaceAfterColon
-        return this
-    }
+    fun setSpaceAfterColon(spaceAfterColon: Boolean) = also { isSpaceAfterColon = spaceAfterColon }
 
-    fun setArrayContentsOnNewLine(arrayContentsOnNewLine: Boolean): PrettyPrintConfig {
-        this.isArrayContentsOnNewLine = arrayContentsOnNewLine
-        return this
-    }
+    fun setArrayContentsOnNewLine(arrayContentsOnNewLine: Boolean) =
+        also { isArrayContentsOnNewLine = arrayContentsOnNewLine }
 
-    fun setObjectContentsOnNewLine(objectContentsOnNewLine: Boolean): PrettyPrintConfig {
-        this.isObjectContentsOnNewLine = objectContentsOnNewLine
-        return this
-    }
+    fun setObjectContentsOnNewLine(objectContentsOnNewLine: Boolean) =
+        also { isObjectContentsOnNewLine = objectContentsOnNewLine }
 }

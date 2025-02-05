@@ -16,16 +16,13 @@
 package net.vpg.vjson.value
 
 import net.vpg.vjson.pretty.PrettyPrinter
-import java.util.function.Consumer
 
 interface DeserializableValue {
     fun deserialize(): String
 
-    fun toPrettyString(): String {
-        val sb = StringBuilder()
-        toPrettyString(PrettyPrinter(Consumer { str: String? -> sb.append(str) }))
-        return sb.toString()
-    }
+    fun toPrettyString() = StringBuilder()
+        .also { sb -> toPrettyString(PrettyPrinter({ sb.append(it) })) }
+        .toString()
 
     fun toPrettyString(printer: PrettyPrinter) {
         printer.print(deserialize())

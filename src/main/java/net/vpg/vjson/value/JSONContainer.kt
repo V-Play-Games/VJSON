@@ -15,123 +15,66 @@
  */
 package net.vpg.vjson.value
 
-import java.util.*
-import java.util.function.*
-import java.util.function.Function
+import java.util.Optional
 
 interface JSONContainer<T> {
-    fun get(t: T): JSONValue
+    operator fun get(t: T): JSONValue
 
-    fun isNull(index: T): Boolean {
-        return get(index).isNull
+    fun isNull(index: T) = get(index).isNull
+
+    fun isType(index: T, type: JSONValue.Type) = get(index).type == type
+
+    fun opt(t: T) = Optional.of(get(t)).filter { !it.isNull }
+
+    fun <V> get(t: T, def: V, convertor: (JSONValue) -> V) = get(t).let {
+        if (it.isNull) def else convertor.invoke(it)
     }
 
-    fun isType(index: T, type: JSONValue.Type?): Boolean {
-        return get(index).type == type
-    }
+    fun getBoolean(t: T) = get(t).toBoolean()
 
-    fun opt(t: T): Optional<JSONValue?> {
-        return Optional.of<JSONValue?>(get(t)).filter(Predicate { o: JSONValue? -> !o!!.isNull })
-    }
+    fun getBoolean(t: T, def: Boolean) = get(t, def) { it.toBoolean() }
 
-    fun <V> get(t: T, def: V?, convertor: Function<JSONValue?, V?>): V? {
-        val `val` = get(t)
-        return if (`val`.isNull) def else convertor.apply(`val`)
-    }
+    fun optBoolean(t: T) = opt(t).map { it.toBoolean() }
 
-    fun getBoolean(t: T): Boolean {
-        return get(t).toBoolean()
-    }
+    fun getNumber(t: T) = get(t).toNumber()
 
-    fun getBoolean(t: T, def: Boolean): Boolean {
-        return get<Boolean?>(t, def, java.util.function.Function { obj: JSONValue? -> obj?.toBoolean() })!!
-    }
+    fun getNumber(t: T, def: Number) = get(t, def) { it.toNumber() }
 
-    fun optBoolean(t: T): Optional<Boolean?> {
-        return opt(t).map<Boolean?>(Function { obj: JSONValue? -> obj!!.toBoolean() })
-    }
+    fun optNumber(t: T) = opt(t).map { it.toNumber() }
 
-    fun getNumber(t: T): Number? {
-        return get(t).toNumber()
-    }
+    fun getInt(t: T) = get(t).toInt()
 
-    fun getNumber(t: T, def: Number?): Number? {
-        return get<Number?>(t, def, Function { obj: JSONValue? -> obj!!.toNumber() })
-    }
+    fun getInt(t: T, def: Int) = getNumber(t, def).toInt()
 
-    fun optNumber(t: T): Optional<Number?> {
-        return opt(t).map<Number?>(Function { obj: JSONValue? -> obj!!.toNumber() })
-    }
+    fun optInt(t: T) = opt(t).stream().mapToInt { it.toInt() }.findFirst()
 
-    fun getInt(t: T): Int {
-        return get(t).toInt()
-    }
+    fun getLong(t: T) = get(t).toLong()
 
-    fun getInt(t: T, def: Int): Int? {
-        return getNumber(t, def)?.toInt()
-    }
+    fun getLong(t: T, def: Long) = getNumber(t, def).toLong()
 
-    fun optInt(t: T): OptionalInt {
-        return opt(t).stream().mapToInt(ToIntFunction { obj: JSONValue? -> obj!!.toInt() }).findFirst()
-    }
+    fun optLong(t: T) = opt(t).stream().mapToLong { it.toLong() }.findFirst()
 
-    fun getLong(t: T): Long {
-        return get(t).toLong()
-    }
+    fun getDouble(t: T) = get(t).toDouble()
 
-    fun getLong(t: T, def: Long): Long? {
-        return getNumber(t, def)?.toLong()
-    }
+    fun getDouble(t: T, def: Long) = getNumber(t, def).toDouble()
 
-    fun optLong(t: T): OptionalLong {
-        return opt(t).stream().mapToLong(ToLongFunction { obj: JSONValue? -> obj!!.toLong() }).findFirst()
-    }
+    fun optDouble(t: T) = opt(t).stream().mapToDouble { it.toDouble() }.findFirst()
 
-    fun getDouble(t: T): Double {
-        return get(t).toLong().toDouble()
-    }
+    fun getString(t: T) = get(t).toString()
 
-    fun getDouble(t: T, def: Long): Double? {
-        return getNumber(t, def)?.toDouble()
-    }
+    fun getString(t: T, def: String?) = get(t, def) { it.toString() }
 
-    fun optDouble(t: T): OptionalDouble {
-        return opt(t).stream().mapToDouble(ToDoubleFunction { obj: JSONValue? -> obj!!.toDouble() }).findFirst()
-    }
+    fun optString(t: T) = opt(t).map { it.toString() }
 
-    fun getString(t: T): String? {
-        return get(t).toString()
-    }
+    fun getObject(t: T) = get(t).toObject()
 
-    fun getString(t: T, def: String?): String? {
-        return get<String?>(t, def, Function { obj: JSONValue? -> obj.toString() })
-    }
+    fun getObject(t: T, def: JSONObject) = get(t, def, { it.toObject() })
 
-    fun optString(t: T): Optional<String?> {
-        return opt(t).map<String?>(Function { obj: JSONValue? -> obj.toString() })
-    }
+    fun optObject(t: T) = opt(t).map { it.toObject() }
 
-    fun getObject(t: T): JSONObject? {
-        return get(t).toObject()
-    }
+    fun getArray(t: T) = get(t).toArray()
 
-    fun getObject(t: T, def: JSONObject): JSONObject? {
-        return get<JSONObject>(t, def, Function { obj: JSONValue? -> obj!!.toObject() })
-    }
+    fun getArray(t: T, def: JSONArray) = get(t, def) { it.toArray() }
 
-    fun optObject(t: T): Optional<JSONObject> {
-        return opt(t).map<JSONObject>(Function { obj: JSONValue? -> obj!!.toObject() })
-    }
-
-    fun getArray(t: T): JSONArray? {
-        return get(t).toArray()
-    }
-
-    fun getArray(t: T, def: JSONArray?): JSONArray? {
-        return get<JSONArray?>(t, def, Function { obj: JSONValue? -> obj!!.toArray() })
-    }
-
-    fun optArray(t: T): Optional<JSONArray?> {
-        return opt(t).map<JSONArray?>(Function { obj: JSONValue? -> obj!!.toArray() })
-    }
+    fun optArray(t: T) = opt(t).map { it.toArray() }
 }

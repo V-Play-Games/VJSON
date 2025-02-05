@@ -16,11 +16,13 @@
 package net.vpg.vjson.parser
 
 import net.vpg.vjson.reader.JSONReader
-import net.vpg.vjson.reader.JSONReader.TokenType
+import net.vpg.vjson.reader.JSONReader.TokenType.*
 import net.vpg.vjson.value.JSONArray
 import net.vpg.vjson.value.JSONObject
 import net.vpg.vjson.value.JSONValue
-import java.io.*
+import java.io.File
+import java.io.InputStream
+import java.io.Reader
 import java.net.URL
 
 /**
@@ -33,93 +35,57 @@ import java.net.URL
  */
 class JSONParser {
     @Throws(ParseException::class)
-    fun parse(s: String): JSONValue? {
-        return parse(JSONReader(s), true)
-    }
+    fun parse(s: String) = parse(JSONReader(s), true)
 
-    @Throws(ParseException::class, FileNotFoundException::class)
-    fun parse(f: File): JSONValue? {
-        return parse(JSONReader(f), true)
-    }
+    fun parse(f: File) = parse(JSONReader(f), true)
 
-    @Throws(ParseException::class, IOException::class)
-    fun parse(url: URL): JSONValue? {
-        return parse(JSONReader(url), true)
-    }
+    fun parse(url: URL) = parse(JSONReader(url), true)
 
-    @Throws(ParseException::class)
-    fun parse(stream: InputStream): JSONValue? {
-        return parse(JSONReader(stream), true)
-    }
+    fun parse(stream: InputStream) = parse(JSONReader(stream), true)
 
-    @Throws(ParseException::class)
-    fun parse(reader: Reader?): JSONValue? {
-        return parse(JSONReader(reader), true)
-    }
+    fun parse(reader: Reader) = parse(JSONReader(reader), true)
 
     @JvmOverloads
-    @Throws(ParseException::class)
-    fun parse(reader: JSONReader, closeAfterParse: Boolean = false): JSONValue? {
-        try {
-            return parseValue(reader)
-        } finally {
-            if (closeAfterParse) {
-                try {
-                    reader.close()
-                } catch (ignore: IOException) {
-                    // close silently
-                }
-            }
+    fun parse(reader: JSONReader, closeAfterParse: Boolean = false) = parseValue(reader).also {
+        if (closeAfterParse) {
+            reader.close()
         }
     }
 
-    @Throws(ParseException::class)
-    private fun parseValue(reader: JSONReader): JSONValue? {
-        if (reader.currentTokenType == null) reader.getNextTokenType()
-        return when (reader.currentTokenType) {
-            TokenType.STRING, TokenType.TRUE, TokenType.FALSE, TokenType.NULL, TokenType.NUMBER -> JSONValue.of(reader.currentToken)
-            TokenType.OBJECT_START -> parseObject(reader)
-            TokenType.ARRAY_START -> parseArray(reader)
-            else -> reader.error<JSONValue?>()
+    private fun parseValue(reader: JSONReader): JSONValue =
+        when (reader.currentTokenType ?: reader.getNextTokenType()) {
+            STRING, TRUE, FALSE, NULL, NUMBER -> JSONValue.of(reader.currentToken)
+            OBJECT_START -> parseObject(reader)
+            ARRAY_START -> parseArray(reader)
+            else -> reader.error<JSONValue>()
         }
-    }
 
-    @Throws(ParseException::class)
-    private fun parseObject(reader: JSONReader): JSONObject {
-        val `object` = JSONObject()
+    private fun parseObject(reader: JSONReader) = JSONObject().also {
         reader.getNextTokenType()
         while (true) {
             val type = reader.currentTokenType
-            if (type == TokenType.OBJECT_END) return `object`
-            if (type != TokenType.STRING) reader.error<Any?>()
-            val key: String? = reader.currentToken.toString()
-            reader.expectNextType(TokenType.COLON)
+            if (type == OBJECT_END) return@also
+            if (type != STRING) reader.error<Any?>()
+            val key = reader.currentToken.toString()
+            reader.expectNextType(COLON)
             reader.getNextTokenType()
-            `object`.put(key, parseValue(reader))
+            it.put(key, parseValue(reader))
             when (reader.getNextTokenType()) {
-                TokenType.OBJECT_END -> return `object`
-                TokenType.COMMA -> reader.getNextTokenType()
-                else -> {
-                    reader.error<Any?>()
-                    return `object`
-                }
+                OBJECT_END -> return@also
+                COMMA -> reader.getNextTokenType()
+                else -> reader.error<Any?>()
             }
         }
     }
 
-    @Throws(ParseException::class)
-    private fun parseArray(reader: JSONReader): JSONArray {
-        val array = JSONArray()
-        if (reader.getNextTokenType() == TokenType.ARRAY_END) return array
+    private fun parseArray(reader: JSONReader) = JSONArray().also {
+        if (reader.getNextTokenType() == ARRAY_END) return@also
         while (true) {
-            array.add(parseValue(reader))
+            it.add(parseValue(reader))
             when (reader.getNextTokenType()) {
-                TokenType.ARRAY_END -> return array
-                TokenType.COMMA -> reader.getNextTokenType()
-                else -> {
-                    reader.error<Any?>()
-                    return array
-                }
+                ARRAY_END -> return@also
+                COMMA -> reader.getNextTokenType()
+                else -> reader.error<Any?>()
             }
         }
     }

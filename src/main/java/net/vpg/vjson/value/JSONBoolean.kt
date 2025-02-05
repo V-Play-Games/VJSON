@@ -16,30 +16,21 @@
 package net.vpg.vjson.value
 
 class JSONBoolean private constructor(private val value: Boolean) : JSONValue() {
-    override val type=Type.BOOLEAN
-    override val raw=value
+    override val type = Type.BOOLEAN
+    override val raw = value
 
-    override fun toBoolean(): Boolean {
-        return value
-    }
+    override fun toBoolean() = value
 
-    override fun deserialize(): String {
-        return java.lang.Boolean.toString(value)
-    }
+    override fun deserialize() = value.toString()
 
     companion object {
         private val TRUE = JSONBoolean(true)
         private val FALSE = JSONBoolean(false)
-        fun ofTrue(): JSONBoolean {
-            return TRUE
-        }
 
-        fun ofFalse(): JSONBoolean {
-            return FALSE
-        }
+        fun ofTrue() = TRUE
 
-        fun of(value: Boolean): JSONBoolean {
-            return if (value) TRUE else FALSE
-        }
+        fun ofFalse() = FALSE
+
+        fun of(value: Boolean) = if (value) TRUE else FALSE
     }
 }

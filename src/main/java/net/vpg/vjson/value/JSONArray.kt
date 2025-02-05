@@ -15,92 +15,57 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.ParseException
 import net.vpg.vjson.pretty.PrettyPrinter
 import net.vpg.vjson.reader.JSONReader
-import java.io.*
+import java.io.File
+import java.io.InputStream
+import java.io.Reader
 import java.net.URL
-import java.util.function.BiConsumer
-import java.util.function.BinaryOperator
-import java.util.function.Function
-import java.util.function.Supplier
 import java.util.stream.Collector
-import java.util.stream.Collectors
-import java.util.stream.Stream
 
-class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
-    private val list: MutableList<JSONValue?>
+class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSONValue> {
+    private val list: MutableList<JSONValue>
 
     constructor() {
-        this.list = ArrayList<JSONValue?>()
+        this.list = ArrayList<JSONValue>()
     }
 
     private constructor(list: List<*>) {
-        this.list = list.stream().map<JSONValue?> { o: Any? -> JSONValue.Companion.of(o) }.collect(Collectors.toList())
+        this.list = list.asSequence().map { of(it) }.toMutableList()
     }
 
-    fun size(): Int {
-        return list.size
-    }
+    val size: Int
+        get() = list.size
 
-    val isEmpty: Boolean
-        get() = list.isEmpty()
+    fun isEmpty() = list.isEmpty()
 
-    override fun get(t: Int): JSONValue {
-        return JSONValue.Companion.of(list.get(t))!!
-    }
+    override fun get(t: Int) = of(list[t])
 
-    fun add(index: Int, value: Any?): JSONArray {
-        list.add(index, JSONValue.Companion.of(value))
-        return this
-    }
+    fun add(index: Int, value: Any?) = also { list.add(index, of(value)) }
 
-    fun add(value: Any?): JSONArray {
-        list.add(JSONValue.Companion.of(value))
-        return this
-    }
+    fun add(value: Any?) = also { list.add(of(value)) }
 
-    fun addAll(values: MutableCollection<*>): JSONArray {
-        values.forEach { value: Any? -> this.add(value) }
-        return this
-    }
+    fun addAll(values: Collection<*>) = also { values.forEach { add(it) } }
 
-    fun addAll(array: JSONArray): JSONArray {
-        list.addAll(array.list)
-        return this
-    }
+    fun addAll(array: JSONArray) = also { list.addAll(array.list) }
 
-    fun remove(index: Int): JSONArray {
-        list.removeAt(index)
-        return this
-    }
+    fun remove(index: Int) = also { list.removeAt(index) }
 
-    fun toList(): MutableList<JSONValue?> {
-        return list
-    }
+    fun toList() = list
 
-    fun <T> toList(converter: Function<JSONValue?, T?>?): MutableList<T?> {
-        return list.stream()
-            .map<T?>(converter)
-            .collect(Collectors.toList())
-    }
+    fun <T> toList(converter: (JSONValue) -> T) = list.asSequence().map(converter).toMutableList()
 
-    fun stream(): Stream<JSONValue?> {
-        return list.stream()
-    }
+    fun stream() = list.stream()
 
-    override fun deserialize(): String {
-        return list.stream().map<String?> { obj: JSONValue? -> obj!!.deserialize() }
-            .collect(Collectors.joining(",", "[", "]"))
-    }
+    override fun iterator() = list.iterator()
 
-    override val type=Type.ARRAY
+    override fun deserialize() = list.asSequence().joinToString(",", "[", "]") { it.deserialize() }
+
+    override val type = Type.ARRAY
     override val raw: Any?
-        get() = list.stream().map<Any?> { obj: JSONValue? -> obj!!.raw }.collect(Collectors.toList())
+        get() = list.asSequence().map { it.raw }.toList()
 
-    override fun toArray(): JSONArray {
-        return this
-    }
+    override fun toArray() = this
 
     override fun toPrettyString(printer: PrettyPrinter) {
         val config = printer.config
@@ -108,7 +73,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
         printer.nextLine(config.isArrayContentsOnNewLine, +1, config.isSpaceWithinBrackets)
         val iterator = list.iterator()
         while (iterator.hasNext()) {
-            iterator.next()!!.toPrettyString(printer)
+            iterator.next().toPrettyString(printer)
             if (!iterator.hasNext()) break
             printer.spaceIf(config.isSpaceBeforeComma)
             printer.print(",")
@@ -119,45 +84,24 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int> {
     }
 
     companion object {
-        fun of(list: List<*>): JSONArray {
-            return JSONArray(list)
-        }
+        fun of(list: List<*>) = JSONArray(list)
 
-        @Throws(ParseException::class)
-        fun parse(`in`: Reader?): JSONArray? {
-            return JSONValue.Companion.parser?.parse(`in`)?.toArray()
-        }
+        fun parse(reader: Reader) = parser?.parse(reader)?.toArray()
 
-        @Throws(ParseException::class, IOException::class)
-        fun parse(url: URL): JSONArray? {
-            return JSONValue.Companion.parser?.parse(url)?.toArray()
-        }
+        fun parse(url: URL) = parser?.parse(url)?.toArray()
 
-        @Throws(ParseException::class)
-        fun parse(`in`: InputStream): JSONArray? {
-            return JSONValue.Companion.parser?.parse(`in`)?.toArray()
-        }
+        fun parse(stream: InputStream) = parser?.parse(stream)?.toArray()
 
-        @Throws(ParseException::class)
-        fun parse(s: String): JSONArray? {
-            return JSONValue.Companion.parser?.parse(s)?.toArray()
-        }
+        fun parse(s: String) = parser?.parse(s)?.toArray()
 
-        @Throws(ParseException::class, FileNotFoundException::class)
-        fun parse(f: File): JSONArray? {
-            return JSONValue.Companion.parser?.parse(f)?.toArray()
-        }
+        fun parse(f: File) = parser?.parse(f)?.toArray()
 
-        @Throws(ParseException::class)
-        fun parse(s: JSONReader): JSONArray? {
-            return JSONValue.Companion.parser?.parse(s)?.toArray()
-        }
+        fun parse(s: JSONReader) = parser?.parse(s)?.toArray()
 
-        fun <T> collector(): Collector<T?, *, JSONArray?> {
-            return Collector.of<T?, JSONArray?>(
-                Supplier { JSONArray() },
-                BiConsumer { obj: JSONArray?, value: T? -> obj!!.add(value) },
-                BinaryOperator { obj: JSONArray?, array: JSONArray -> obj!!.addAll(array) })
-        }
+        fun <T> collector() = Collector.of<T, JSONArray>(
+            { JSONArray() },
+            { obj, value -> obj.add(value) },
+            { obj, array -> obj.addAll(array) }
+        )
     }
 }

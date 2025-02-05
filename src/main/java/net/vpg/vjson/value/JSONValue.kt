@@ -16,63 +16,42 @@
 package net.vpg.vjson.value
 
 import net.vpg.vjson.parser.JSONParser
-import net.vpg.vjson.parser.ParseException
 import net.vpg.vjson.reader.JSONReader
-import java.io.*
+import java.io.File
+import java.io.InputStream
+import java.io.Reader
 import java.net.URL
 import java.util.*
 
 abstract class JSONValue : DeserializableValue {
-    abstract val type: Type?
+    abstract val type: Type
 
     abstract val raw: Any?
 
-    override fun equals(o: Any?): Boolean {
-        return o is JSONValue && o.raw == this.raw
-    }
+    override fun equals(other: Any?) = other is JSONValue && other.raw == this.raw
 
-    override fun hashCode(): Int {
-        return Objects.hashCode(this.raw)
-    }
+    override fun hashCode() = Objects.hashCode(raw)
 
-    open fun toBoolean(): Boolean {
-        return error<Boolean?>(Type.BOOLEAN)!!
-    }
+    open fun toBoolean() = error<Boolean>(Type.BOOLEAN)
 
-    open fun toNumber(): Number? {
-        return error<Number?>(Type.NUMBER)
-    }
+    open fun toNumber() = error<Number>(Type.NUMBER)
 
-    open fun toObject(): JSONObject? {
-        return error<JSONObject?>(Type.OBJECT)
-    }
+    open fun toObject() = error<JSONObject>(Type.OBJECT)
 
-    open fun toArray(): JSONArray? {
-        return error<JSONArray?>(Type.ARRAY)
-    }
+    open fun toArray() = error<JSONArray>(Type.ARRAY)
 
-    fun toInt(): Int {
-        return toNumber()!!.toInt()
-    }
+    fun toInt() = toNumber().toInt()
 
-    fun toLong(): Long {
-        return toNumber()!!.toLong()
-    }
+    fun toLong() = toNumber().toLong()
 
-    fun toDouble(): Double {
-        return toNumber()!!.toDouble()
-    }
+    fun toDouble() = toNumber().toDouble()
 
-    open val isNull: Boolean
-        get() = false
+    open val isNull = false
 
-    override fun toString(): String {
-        return deserialize()
-    }
+    override fun toString() = deserialize()
 
-    private fun <T> error(type: Type?): T? {
+    private fun <T> error(type: Type): T =
         throw UnsupportedOperationException("Cannot cast value of type " + this.type + " to type " + type)
-    }
 
     enum class Type {
         NULL, STRING, NUMBER, BOOLEAN, OBJECT, ARRAY
@@ -84,50 +63,30 @@ abstract class JSONValue : DeserializableValue {
             get() = if (field == null) JSONParser().also { field = it } else field
             private set
 
-        @Throws(ParseException::class)
-        fun parse(`in`: Reader?): JSONValue? {
-            return parser!!.parse(`in`)
-        }
+        fun parse(reader: Reader) = parser!!.parse(reader)
 
-        @Throws(ParseException::class, IOException::class)
-        fun parse(url: URL): JSONValue? {
-            return parser!!.parse(url)
-        }
+        fun parse(url: URL) = parser!!.parse(url)
 
-        @Throws(ParseException::class)
-        fun parse(`in`: InputStream): JSONValue? {
-            return parser!!.parse(`in`)
-        }
+        fun parse(stream: InputStream) = parser!!.parse(stream)
 
-        @Throws(ParseException::class)
-        fun parse(s: String): JSONValue {
-            return parser!!.parse(s)!!
-        }
+        fun parse(s: String) = parser!!.parse(s)
 
-        @Throws(ParseException::class, FileNotFoundException::class)
-        fun parse(f: File): JSONValue? {
-            return parser!!.parse(f)
-        }
+        fun parse(f: File) = parser!!.parse(f)
 
-        @Throws(ParseException::class)
-        fun parse(s: JSONReader): JSONValue? {
-            return parser!!.parse(s)
-        }
+        fun parse(s: JSONReader) = parser!!.parse(s)
 
-        fun of(o: Any?): JSONValue {
-            return when (o) {
-                null -> JSONNull.Companion.instance
-                is JSONValue -> o
-                is List<*> -> JSONArray.Companion.of(o)
-                is Map<*, *> -> JSONObject.Companion.of(o as Map<Any?, Any?>)
-                is String -> JSONString.Companion.of(o)
-                is Number-> JSONNumber.Companion.of(o)
-                is Boolean-> JSONBoolean.Companion.of(o)
-                is SerializableArray-> o.toArray()
-                is SerializableObject-> o.toObject()
-                is DeserializableValue-> Companion.parse(o.deserialize())
-                else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.javaClass)
-            }
+        fun of(o: Any?) = when (o) {
+            null -> JSONNull.Companion.instance
+            is JSONValue -> o
+            is List<*> -> JSONArray.of(o)
+            is Map<*, *> -> JSONObject.of(o)
+            is String -> JSONString.of(o)
+            is Number -> JSONNumber.of(o)
+            is Boolean -> JSONBoolean.of(o)
+            is SerializableArray -> o.toArray()
+            is SerializableObject -> o.toObject()
+            is DeserializableValue -> parse(o.deserialize())
+            else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.javaClass)
         }
     }
 }

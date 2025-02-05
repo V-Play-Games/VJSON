@@ -17,22 +17,9 @@ package net.vpg.vjson.reader
 
 import net.vpg.vjson.parser.ParseException
 import java.io.*
-import java.lang.Double
-import java.lang.Long
 import java.net.URL
 import java.util.Map
 import java.util.function.Function
-import kotlin.Any
-import kotlin.Boolean
-import kotlin.Char
-import kotlin.CharArray
-import kotlin.Int
-import kotlin.Number
-import kotlin.String
-import kotlin.Throws
-import kotlin.also
-import kotlin.check
-import kotlin.toString
 
 class JSONReader : Closeable {
     var currentTokenType: TokenType? = null
@@ -40,19 +27,13 @@ class JSONReader : Closeable {
     var currentToken: Any? = null
         private set
 
-    fun getNextTokenType(): TokenType? {
-        return getNextTokenType0().also { currentTokenType = it }
-    }
+    fun getNextTokenType() = getNextTokenType0().also { currentTokenType = it }
 
-    @Throws(ParseException::class)
     fun expectNextType(type: TokenType?) {
         if (this.getNextTokenType() != type) error<Any?>()
     }
 
-    @Throws(ParseException::class)
-    fun <T> error(): T {
-        throw ParseException(this.position, java.lang.String.valueOf(this.currentToken))
-    }
+    fun <T> error(): T = throw ParseException(position, currentToken.toString())
 
     enum class TokenType {
         EOF, NUMBER, STRING, TRUE, FALSE, NULL, OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, COMMA, COLON
@@ -60,24 +41,24 @@ class JSONReader : Closeable {
 
     private val close: Boolean
     private val isStringBased: Boolean
-    private var builder: StringBuilder? = StringBuilder()
+    private var builder = StringBuilder()
     private var reader: Reader? = null
     private var totalPos = -1
     private var position = -1
     private var lastPos = 0
-    private var buffer: CharArray?
+    private var buffer: CharArray
 
     constructor(f: File) : this(FileReader(f))
 
     constructor(url: URL) : this(url.openStream(), true)
 
     @JvmOverloads
-    constructor(`in`: InputStream, close: Boolean = false) : this(InputStreamReader(`in`), close)
+    constructor(stream: InputStream, close: Boolean = false) : this(InputStreamReader(stream), close)
 
     @JvmOverloads
-    constructor(`in`: Reader?, close: Boolean = false) {
+    constructor(reader: Reader?, close: Boolean = false) {
         buffer = CharArray(1048576)
-        reader = `in`
+        this.reader = reader
         this.close = close
         isStringBased = false
         buffer()
@@ -93,7 +74,7 @@ class JSONReader : Closeable {
     private fun buffer(): Boolean {
         try {
             position = -1
-            val numRead = reader!!.read(buffer, 0, buffer!!.size)
+            val numRead = reader!!.read(buffer, 0, buffer.size)
             if (numRead == -1) {
                 return true
             }
@@ -105,9 +86,9 @@ class JSONReader : Closeable {
     }
 
     private fun nextChar(): Char {
-        if (this.isEOF) error<Any?>()
+        if (isEOF) error<Any?>()
         ++totalPos
-        return buffer!![++position]
+        return buffer[++position]
     }
 
     private fun decrementPosition() {
@@ -120,94 +101,79 @@ class JSONReader : Closeable {
 
     fun getNextTokenType0(): TokenType? {
         checkOpen()
-        if (this.isEOF) return TokenType.EOF
+        if (isEOF) return TokenType.EOF
         val c = nextChar()
         if (Character.isDigit(c) || c == '-') {
-            currentToken = this.number
+            currentToken = readNumber()
             return TokenType.NUMBER
         }
         currentToken =
-            tokenMap.getOrDefault(c, java.util.function.Function { r: JSONReader? -> c })!!.apply(this)
+            tokenMap.getOrDefault(c) { c }!!.apply(this)
         if (" \u0000\t\r\n".indexOf(c) >= 0) return getNextTokenType0()
         val type: TokenType? = typeMap.get(c)
         if (type == null) error<Any?>()
         return type
     }
 
-    private val string: String
-        get() {
-            while (true) {
-                var c = nextChar()
-                when (c) {
-                    '\b', '\u000c', '\n', '\r', '\t' -> {
-                        error<Any?>()
-                        return this.builderString
-                    }
-
-                    '"' -> return this.builderString
-                    '\\' -> {
-                        c = when (nextChar()) {
-                            '"' -> '\"'
-                            '\\' -> '\\'
-                            '/' -> '/'
-                            'b' -> '\b'
-                            'f' -> '\u000c'
-                            'n' -> '\n'
-                            'r' -> '\r'
-                            't' -> '\t'
-                            'u' -> (nextHexChar() shl 12 or (nextHexChar() shl 8) or (nextHexChar() shl 4) or nextHexChar()).toChar()
-                            else -> error<Char>()
-                        }
-                        builder!!.append(c)
-                    }
-
-                    else -> builder!!.append(c)
+    private fun readString(): String {
+        while (true) {
+            var c = nextChar()
+            when (c) {
+                '\b', '\u000c', '\n', '\r', '\t' -> {
+                    error<Any?>()
+                    return this.builderString
                 }
+
+                '"' -> return this.builderString
+                '\\' -> {
+                    c = when (nextChar()) {
+                        '"' -> '\"'
+                        '\\' -> '\\'
+                        '/' -> '/'
+                        'b' -> '\b'
+                        'f' -> '\u000c'
+                        'n' -> '\n'
+                        'r' -> '\r'
+                        't' -> '\t'
+                        'u' -> (hex() shl 4 or hex() shl 4 or hex() shl 4 or hex()).toChar()
+                        else -> error<Char>()
+                    }
+                    builder.append(c)
+                }
+
+                else -> builder.append(c)
             }
         }
-
-    private fun nextHexChar(): Int {
-        val c = Character.digit(nextChar(), 16)
-        if (c == -1) error<Any?>()
-        return c
     }
 
-    private val number: Number
-        get() {
-            decrementPosition()
-            var c: Char
-            while ("0123456789.+-eE".indexOf(nextChar().also { c = it }) >= 0) {
-                builder!!.append(c)
-            }
-            decrementPosition()
-            val s = this.builderString
-            // Don't use ternary to avoid casting to Double
-            if (s.contains(".")) return Double.parseDouble(s)
-            else return Long.parseLong(s)
+    private fun hex() = Character.digit(nextChar(), 16)
+        .takeIf { it != -1 } ?: error<Int>()
+
+    private fun readNumber(): Number {
+        decrementPosition()
+        var c: Char
+        while ("0123456789.+-eE".indexOf(nextChar().also { c = it }) >= 0) {
+            builder.append(c)
         }
+        decrementPosition()
+        return builderString.let { if (it.contains(".")) it.toDouble() else it.toLong() }
+    }
 
     private val builderString: String
-        get() {
-            val tor = builder.toString()
-            builder!!.setLength(0)
-            return tor
-        }
+        get() = builder.toString().also { builder.setLength(0) }
 
     private fun checkToken(token: String) {
         decrementPosition()
-        for (i in 0..<token.length) if (token[i] != nextChar()) error<Any?>()
+        for (c in token) if (c != nextChar()) error<Any?>()
     }
 
-    @Throws(IOException::class)
     override fun close() {
         if (lastPos == -1) return
         lastPos = -1
         totalPos = 0
         position = 0
         currentTokenType = null
-        builder = null
         currentToken = null
-        buffer = null
         if (close) reader!!.close()
         reader = null
     }
@@ -231,7 +197,7 @@ class JSONReader : Closeable {
         )
         private val tokenMap: MutableMap<Char?, Function<JSONReader?, Any?>?> =
             Map.of<Char?, Function<JSONReader?, Any?>?>(
-                '"', Function { obj: JSONReader? -> obj!!.string },
+                '"', Function { obj: JSONReader? -> obj!!.readString() },
                 't', Function { reader: JSONReader? ->
                     reader!!.checkToken("true")
                     true

@@ -15,23 +15,16 @@
  */
 package net.vpg.vjson.pretty
 
-import java.util.function.Consumer
-
-class PrettyPrinter(val config: PrettyPrintConfig, private val write: Consumer<String?>) {
+class PrettyPrinter(private val write: (String?) -> Any, val config: PrettyPrintConfig = PrettyPrintConfig()) {
     private var indentLevel = 0
 
-    constructor(write: Consumer<String?>) : this(PrettyPrintConfig(), write)
+    fun print(s: String?) = write.invoke(s)
 
-    fun print(s: String?) {
-        write.accept(s)
-    }
-
-    fun nextLine(newLineCondition: Boolean, indentDelta: Int, spaceCondition: Boolean) {
+    fun nextLine(newLineCondition: Boolean, indentDelta: Int, spaceCondition: Boolean) =
         if (newLineCondition) {
             indentLevel += indentDelta
-            print("\n" + config.indent!!.repeat(indentLevel))
+            print("\n" + config.indent.repeat(indentLevel))
         } else spaceIf(spaceCondition)
-    }
 
     fun spaceIf(condition: Boolean) {
         if (condition) print(" ")

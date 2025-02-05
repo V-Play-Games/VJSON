@@ -15,82 +15,58 @@
  */
 package net.vpg.vjson.value
 
-class JSONString private constructor(private val value: String?) : JSONValue() {
+class JSONString private constructor(private val value: String) : JSONValue() {
+    override val type = Type.STRING
+    override val raw = value
 
-    override val type= Type.STRING
-    override val raw=value
+    override fun toString() = value
 
-    override fun toString(): String {
-        return value!!
-    }
-
-    override fun deserialize(): String {
-        return "\"" + escape(value) + "\""
-    }
+    override fun deserialize() = "\"" + escape(value) + "\""
 
     companion object {
-        fun of(value: String): JSONString {
-            requireNotNull(value) { "value should not be null" }
-            return JSONString(value)
-        }
+        fun of(value: String) = JSONString(requireNotNull(value) { "value should not be null" })
 
-        fun escape(s: String?): String? {
-            if (s == null) return null
-            val builder: StringBuilder = StringBuilder(s.length)
-            var i = 0
-            val len: Int = s.length
-            while (i < len) {
-                builder.append(Companion.escape(s[i]))
-                i++
-            }
-            return builder.toString()
-        }
-
-        fun escape(c: Char): String {
-            return when (c) {
-                '\\' -> "\\\\"
-                '\b' -> "\\b"
-                '\u000c' -> "\\f"
-                '\n' -> "\\n"
-                '\r' -> "\\r"
-                '\t' -> "\\t"
-                '"' -> "\\\""
-                '/' -> "\\/"
-                else -> Character.toString(c)
+        fun escape(s: String) = buildString(s.length) {
+            for (c in s) {
+                append(escape(c))
             }
         }
 
-        fun unescape(s: String?): String? {
-            if (s == null || !s.contains("\\")) {
-                return s
-            }
+        fun escape(c: Char) = when (c) {
+            '\\' -> "\\\\"
+            '\b' -> "\\b"
+            '\u000c' -> "\\f"
+            '\n' -> "\\n"
+            '\r' -> "\\r"
+            '\t' -> "\\t"
+            '"' -> "\\\""
+            '/' -> "\\/"
+            else -> c.toString()
+        }
 
-            val result = StringBuilder()
+        fun unescape(s: String) = if (!s.contains("\\")) s else buildString {
             var i = 0
             while (i < s.length) {
-                val c: Char = s[i]
+                val c = s[i]
                 if (c != '\\' || i + 1 == s.length) {
-                    result.append(c)
+                    append(c)
                     i++
                     continue
                 }
-                val next: Char = s[i + 1]
+                val next = s[i + 1]
                 when (next) {
-                    '\\' -> result.append('\\')
-                    '/' -> result.append('/')
-                    '"' -> result.append('"')
-                    'b' -> result.append('\b')
-                    'f' -> result.append('\u000c')
-                    'n' -> result.append('\n')
-                    'r' -> result.append('\r')
-                    't' -> result.append('\t')
-                    else -> result.append(c).append(next)
+                    '\\' -> append('\\')
+                    '/' -> append('/')
+                    '"' -> append('"')
+                    'b' -> append('\b')
+                    'f' -> append('\u000c')
+                    'n' -> append('\n')
+                    'r' -> append('\r')
+                    't' -> append('\t')
+                    else -> append(c).append(next)
                 }
-                i++
-                i++
+                i += 2
             }
-
-            return result.toString()
         }
     }
 }
