@@ -39,19 +39,14 @@ class JSONReader : Closeable {
         private set
     var currentToken: Any? = null
         private set
-    var nextTokenType: TokenType? = null
-        private set
-        get() {
-            currentTokenType = field
-            field = getNextTokenType0()
-            return field
-        }
-    var nextToken: Any? = null
-        private set
+
+    fun getNextTokenType(): TokenType? {
+        return getNextTokenType0().also { currentTokenType = it }
+    }
 
     @Throws(ParseException::class)
     fun expectNextType(type: TokenType?) {
-        if (this.nextTokenType != type) error<Any?>()
+        if (this.getNextTokenType() != type) error<Any?>()
     }
 
     @Throws(ParseException::class)
@@ -62,6 +57,7 @@ class JSONReader : Closeable {
     enum class TokenType {
         EOF, NUMBER, STRING, TRUE, FALSE, NULL, OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, COMMA, COLON
     }
+
     private val close: Boolean
     private val isStringBased: Boolean
     private var builder: StringBuilder? = StringBuilder()

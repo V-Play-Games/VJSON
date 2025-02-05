@@ -75,7 +75,7 @@ class JSONParser {
 
     @Throws(ParseException::class)
     private fun parseValue(reader: JSONReader): JSONValue? {
-        if (reader.currentTokenType == null) reader.nextTokenType
+        if (reader.currentTokenType == null) reader.getNextTokenType()
         return when (reader.currentTokenType) {
             TokenType.STRING, TokenType.TRUE, TokenType.FALSE, TokenType.NULL, TokenType.NUMBER -> JSONValue.of(reader.currentToken)
             TokenType.OBJECT_START -> parseObject(reader)
@@ -87,18 +87,18 @@ class JSONParser {
     @Throws(ParseException::class)
     private fun parseObject(reader: JSONReader): JSONObject {
         val `object` = JSONObject()
-        reader.nextTokenType
+        reader.getNextTokenType()
         while (true) {
             val type = reader.currentTokenType
             if (type == TokenType.OBJECT_END) return `object`
             if (type != TokenType.STRING) reader.error<Any?>()
             val key: String? = reader.currentToken.toString()
             reader.expectNextType(TokenType.COLON)
-            reader.nextTokenType
+            reader.getNextTokenType()
             `object`.put(key, parseValue(reader))
-            when (reader.nextTokenType) {
+            when (reader.getNextTokenType()) {
                 TokenType.OBJECT_END -> return `object`
-                TokenType.COMMA -> reader.nextTokenType
+                TokenType.COMMA -> reader.getNextTokenType()
                 else -> {
                     reader.error<Any?>()
                     return `object`
@@ -110,12 +110,12 @@ class JSONParser {
     @Throws(ParseException::class)
     private fun parseArray(reader: JSONReader): JSONArray {
         val array = JSONArray()
-        if (reader.nextTokenType == TokenType.ARRAY_END) return array
+        if (reader.getNextTokenType() == TokenType.ARRAY_END) return array
         while (true) {
             array.add(parseValue(reader))
-            when (reader.nextTokenType) {
+            when (reader.getNextTokenType()) {
                 TokenType.ARRAY_END -> return array
-                TokenType.COMMA -> reader.nextTokenType
+                TokenType.COMMA -> reader.getNextTokenType()
                 else -> {
                     reader.error<Any?>()
                     return array
