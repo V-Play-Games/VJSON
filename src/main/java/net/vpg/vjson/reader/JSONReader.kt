@@ -18,8 +18,6 @@ package net.vpg.vjson.reader
 import net.vpg.vjson.parser.ParseException
 import java.io.*
 import java.net.URL
-import java.util.Map
-import java.util.function.Function
 
 class JSONReader : Closeable {
     var currentTokenType: TokenType? = null
@@ -73,8 +71,8 @@ class JSONReader : Closeable {
 
     private fun buffer(): Boolean {
         try {
-            position = -1
             val numRead = reader!!.read(buffer, 0, buffer.size)
+            position = -1
             if (numRead == -1) {
                 return true
             }
@@ -99,20 +97,34 @@ class JSONReader : Closeable {
     private val isEOF: Boolean
         get() = position + 1 == lastPos && (isStringBased || buffer())
 
-    fun getNextTokenType0(): TokenType? {
-        checkOpen()
+    fun getNextTokenType0(): TokenType {
+        check(lastPos != -1) { "This JSONReader has already been closed!" }
         if (isEOF) return TokenType.EOF
         val c = nextChar()
-        if (Character.isDigit(c) || c == '-') {
-            currentToken = readNumber()
-            return TokenType.NUMBER
-        }
-        currentToken =
-            tokenMap.getOrDefault(c) { c }!!.apply(this)
         if (" \u0000\t\r\n".indexOf(c) >= 0) return getNextTokenType0()
-        val type: TokenType? = typeMap.get(c)
-        if (type == null) error<Any?>()
-        return type
+        val number = Character.isDigit(c) || c == '-'
+        currentToken = when (c) {
+            '"' -> readString()
+            't' -> checkToken(true)
+            'f' -> checkToken(false)
+            'n' -> checkToken(null)
+            else if (number) -> readNumber()
+            else -> c
+        }
+        return when (c) {
+            '{' -> TokenType.OBJECT_START
+            '}' -> TokenType.OBJECT_END
+            '[' -> TokenType.ARRAY_START
+            ']' -> TokenType.ARRAY_END
+            ',' -> TokenType.COMMA
+            ':' -> TokenType.COLON
+            '"' -> TokenType.STRING
+            't' -> TokenType.TRUE
+            'f' -> TokenType.FALSE
+            'n' -> TokenType.NULL
+            else if (number) -> TokenType.NUMBER
+            else -> error()
+        }
     }
 
     private fun readString(): String {
@@ -121,10 +133,10 @@ class JSONReader : Closeable {
             when (c) {
                 '\b', '\u000c', '\n', '\r', '\t' -> {
                     error<Any?>()
-                    return this.builderString
+                    return builderString
                 }
 
-                '"' -> return this.builderString
+                '"' -> return builderString
                 '\\' -> {
                     c = when (nextChar()) {
                         '"' -> '\"'
@@ -162,9 +174,9 @@ class JSONReader : Closeable {
     private val builderString: String
         get() = builder.toString().also { builder.setLength(0) }
 
-    private fun checkToken(token: String) {
+    private fun checkToken(token: Any?) = token.also {
         decrementPosition()
-        for (c in token) if (c != nextChar()) error<Any?>()
+        for (c in token.toString()) if (c != nextChar()) error<Any?>()
     }
 
     override fun close() {
@@ -176,40 +188,5 @@ class JSONReader : Closeable {
         currentToken = null
         if (close) reader!!.close()
         reader = null
-    }
-
-    fun checkOpen() {
-        check(lastPos != -1) { "This JSONReader has already been closed!" }
-    }
-
-    companion object {
-        private val typeMap: MutableMap<Char?, TokenType?> = Map.of<Char?, TokenType?>(
-            '{', TokenType.OBJECT_START,
-            '}', TokenType.OBJECT_END,
-            '[', TokenType.ARRAY_START,
-            ']', TokenType.ARRAY_END,
-            ',', TokenType.COMMA,
-            ':', TokenType.COLON,
-            '"', TokenType.STRING,
-            't', TokenType.TRUE,
-            'f', TokenType.FALSE,
-            'n', TokenType.NULL
-        )
-        private val tokenMap: MutableMap<Char?, Function<JSONReader?, Any?>?> =
-            Map.of<Char?, Function<JSONReader?, Any?>?>(
-                '"', Function { obj: JSONReader? -> obj!!.readString() },
-                't', Function { reader: JSONReader? ->
-                    reader!!.checkToken("true")
-                    true
-                },
-                'f', Function { reader: JSONReader? ->
-                    reader!!.checkToken("false")
-                    false
-                },
-                'n', Function { reader: JSONReader? ->
-                    reader!!.checkToken("null")
-                    null
-                }
-            )
     }
 }

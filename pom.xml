@@ -78,6 +78,9 @@
         </executions>
         <configuration>
           <jvmTarget>1.8</jvmTarget>
+          <args>
+            <arg>-Xwhen-guards</arg>
+          </args>
         </configuration>
       </plugin>
       <plugin>
