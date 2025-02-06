@@ -58,7 +58,7 @@ abstract class JSONValue : DeserializableValue {
     }
 
     companion object {
-        fun Any?.toJSONValue() = when (this) {
+        internal fun Any?.toJSONValue() = when (this) {
             null -> JSONNull
             is JSONValue -> this
             is List<*> -> this.toJSON()
