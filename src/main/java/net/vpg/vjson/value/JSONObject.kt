@@ -15,13 +15,7 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.JSONParser
 import net.vpg.vjson.pretty.PrettyPrinter
-import net.vpg.vjson.reader.JSONReader
-import java.io.File
-import java.io.InputStream
-import java.io.Reader
-import java.net.URL
 import java.util.stream.Collector
 
 class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
@@ -36,9 +30,9 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
 
     fun isEmpty() = map.isEmpty()
 
-    override fun get(t: String) = of(map.get(t))
+    override fun get(t: String) = map.get(t).toJSONValue()
 
-    fun put(key: String, value: Any?) = also { map.put(key, of(value)) }
+    fun put(key: String, value: Any?) = also { map.put(key, value.toJSONValue()) }
 
     fun putAll(map: Map<*, *>) = also { map.forEach { k, v -> put(k.toString(), v) } }
 
@@ -84,20 +78,7 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
     }
 
     companion object {
-        fun of(map: Map<*, *>) = JSONObject(map)
-
-        fun parse(reader: Reader) = JSONParser.parse(reader).toObject()
-
-        @JvmStatic
-        fun parse(url: URL) = JSONParser.parse(url).toObject()
-
-        fun parse(stream: InputStream) = JSONParser.parse(stream).toObject()
-
-        fun parse(s: String) = JSONParser.parse(s).toObject()
-
-        fun parse(f: File) = JSONParser.parse(f).toObject()
-
-        fun parse(s: JSONReader) = JSONParser.parse(s).toObject()
+        fun Map<*, *>.toJSON() = JSONObject(this)
 
         fun <T> collector(keyMapper: (T) -> String, valueMapper: (T) -> Any?) = Collector.of<T, JSONObject>(
             { JSONObject() },

@@ -20,6 +20,7 @@ import net.vpg.vjson.reader.JSONReader.TokenType.*
 import net.vpg.vjson.value.JSONArray
 import net.vpg.vjson.value.JSONObject
 import net.vpg.vjson.value.JSONValue
+import net.vpg.vjson.value.JSONValue.Companion.toJSONValue
 import java.io.File
 import java.io.InputStream
 import java.io.Reader
@@ -34,21 +35,37 @@ import java.net.URL
  * @author Vaibhav Nargwani
  */
 object JSONParser {
+    fun String.parseToJSON() = parse(JSONReader(this))
+
+    fun File.toJSON() = parse(JSONReader(this))
+
+    fun URL.toJSON() = parse(JSONReader(this))
+
+    fun InputStream.toJSON() = parse(JSONReader(this))
+
+    fun Reader.toJSON() = parse(JSONReader(this))
+
+    @JvmStatic
     fun parse(s: String) = parse(JSONReader(s))
 
+    @JvmStatic
     fun parse(f: File) = parse(JSONReader(f))
 
+    @JvmStatic
     fun parse(url: URL) = parse(JSONReader(url))
 
+    @JvmStatic
     fun parse(stream: InputStream) = parse(JSONReader(stream))
 
+    @JvmStatic
     fun parse(reader: Reader) = parse(JSONReader(reader))
 
+    @JvmStatic
     fun parse(reader: JSONReader) = reader.use { parseValue(it) }
 
     private fun parseValue(reader: JSONReader): JSONValue =
         when (reader.currentTokenType ?: reader.getNextTokenType()) {
-            STRING, TRUE, FALSE, NULL, NUMBER -> JSONValue.of(reader.currentToken)
+            STRING, TRUE, FALSE, NULL, NUMBER -> reader.currentToken.toJSONValue()
             OBJECT_START -> parseObject(reader)
             ARRAY_START -> parseArray(reader)
             else -> reader.error<JSONValue>()

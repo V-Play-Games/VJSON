@@ -31,6 +31,6 @@ class JSONBoolean private constructor(private val value: Boolean) : JSONValue() 
 
         fun ofFalse() = FALSE
 
-        fun of(value: Boolean) = if (value) TRUE else FALSE
+        fun Boolean.toJSON() = if (this) TRUE else FALSE
     }
 }

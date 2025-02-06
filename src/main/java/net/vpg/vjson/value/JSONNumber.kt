@@ -26,6 +26,6 @@ class JSONNumber private constructor(private val value: Number) : JSONValue() {
     override fun deserialize() = value.toString()
 
     companion object {
-        fun of(value: Number) = JSONNumber(requireNotNull(value) { "value should not be null" })
+        fun Number.toJSON() = JSONNumber(this)
     }
 }

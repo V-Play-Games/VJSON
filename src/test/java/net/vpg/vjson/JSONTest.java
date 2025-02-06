@@ -1,5 +1,6 @@
 package net.vpg.vjson;
 
+import net.vpg.vjson.parser.JSONParser;
 import net.vpg.vjson.value.JSONArray;
 import net.vpg.vjson.value.JSONObject;
 import org.junit.jupiter.api.Assertions;
@@ -30,8 +31,8 @@ class JSONTest {
     }
 
     @Test
-    void checkCorrectParse() throws IOException {
-        Assertions.assertEquals(obj.toString(), JSONObject.parse(url).toString());
+    void checkCorrectParse() {
+        Assertions.assertEquals(obj.toString(), JSONParser.parse(url).toString());
     }
 
     @Test

@@ -15,12 +15,12 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.JSONParser
-import net.vpg.vjson.reader.JSONReader
-import java.io.File
-import java.io.InputStream
-import java.io.Reader
-import java.net.URL
+import net.vpg.vjson.parser.JSONParser.parseToJSON
+import net.vpg.vjson.value.JSONArray.Companion.toJSON
+import net.vpg.vjson.value.JSONBoolean.Companion.toJSON
+import net.vpg.vjson.value.JSONNumber.Companion.toJSON
+import net.vpg.vjson.value.JSONObject.Companion.toJSON
+import net.vpg.vjson.value.JSONString.Companion.toJSON
 import java.util.*
 
 abstract class JSONValue : DeserializableValue {
@@ -58,30 +58,18 @@ abstract class JSONValue : DeserializableValue {
     }
 
     companion object {
-        fun parse(reader: Reader) = JSONParser.parse(reader)
-
-        fun parse(url: URL) = JSONParser.parse(url)
-
-        fun parse(stream: InputStream) = JSONParser.parse(stream)
-
-        fun parse(s: String) = JSONParser.parse(s)
-
-        fun parse(f: File) = JSONParser.parse(f)
-
-        fun parse(s: JSONReader) = JSONParser.parse(s)
-
-        fun of(o: Any?) = when (o) {
+        fun Any?.toJSONValue() = when (this) {
             null -> JSONNull
-            is JSONValue -> o
-            is List<*> -> JSONArray.of(o)
-            is Map<*, *> -> JSONObject.of(o)
-            is String -> JSONString.of(o)
-            is Number -> JSONNumber.of(o)
-            is Boolean -> JSONBoolean.of(o)
-            is SerializableArray -> o.toArray()
-            is SerializableObject -> o.toObject()
-            is DeserializableValue -> parse(o.deserialize())
-            else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + o.javaClass)
+            is JSONValue -> this
+            is List<*> -> this.toJSON()
+            is Map<*, *> -> this.toJSON()
+            is String -> this.toJSON()
+            is Number -> this.toJSON()
+            is Boolean -> this.toJSON()
+            is SerializableArray -> this.toArray()
+            is SerializableObject -> this.toObject()
+            is DeserializableValue -> this.deserialize().parseToJSON()
+            else -> throw UnsupportedOperationException("Cannot make JSONValue of class " + this.javaClass)
         }
     }
 }

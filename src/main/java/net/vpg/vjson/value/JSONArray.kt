@@ -15,13 +15,7 @@
  */
 package net.vpg.vjson.value
 
-import net.vpg.vjson.parser.JSONParser
 import net.vpg.vjson.pretty.PrettyPrinter
-import net.vpg.vjson.reader.JSONReader
-import java.io.File
-import java.io.InputStream
-import java.io.Reader
-import java.net.URL
 import java.util.stream.Collector
 
 class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSONValue> {
@@ -32,7 +26,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
     }
 
     private constructor(list: List<*>) {
-        this.list = list.asSequence().map { of(it) }.toMutableList()
+        this.list = list.asSequence().map { it.toJSONValue() }.toMutableList()
     }
 
     val size: Int
@@ -40,11 +34,11 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
 
     fun isEmpty() = list.isEmpty()
 
-    override fun get(t: Int) = of(list[t])
+    override fun get(t: Int) = list[t].toJSONValue()
 
-    fun add(index: Int, value: Any?) = also { list.add(index, of(value)) }
+    fun add(index: Int, value: Any?) = also { list.add(index, value.toJSONValue()) }
 
-    fun add(value: Any?) = also { list.add(of(value)) }
+    fun add(value: Any?) = also { list.add(value.toJSONValue()) }
 
     fun addAll(values: Collection<*>) = also { values.forEach { add(it) } }
 
@@ -85,19 +79,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
     }
 
     companion object {
-        fun of(list: List<*>) = JSONArray(list)
-
-        fun parse(reader: Reader) = JSONParser.parse(reader).toArray()
-
-        fun parse(url: URL) = JSONParser.parse(url).toArray()
-
-        fun parse(stream: InputStream) = JSONParser.parse(stream).toArray()
-
-        fun parse(s: String) = JSONParser.parse(s).toArray()
-
-        fun parse(f: File) = JSONParser.parse(f).toArray()
-
-        fun parse(s: JSONReader) = JSONParser.parse(s).toArray()
+        fun List<*>.toJSON() = JSONArray(this)
 
         fun <T> collector() = Collector.of<T, JSONArray>(
             { JSONArray() },
