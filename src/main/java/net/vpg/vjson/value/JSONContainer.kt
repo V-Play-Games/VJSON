@@ -20,6 +20,8 @@ import java.util.Optional
 interface JSONContainer<T> {
     operator fun get(t: T): JSONValue
 
+    val size: Int
+
     fun isNull(index: T) = get(index).isNull
 
     fun isType(index: T, type: JSONValue.Type) = get(index).type == type

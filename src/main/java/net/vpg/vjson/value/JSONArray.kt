@@ -29,8 +29,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
         this.list = list.asSequence().map { it.toJSONValue() }.toMutableList()
     }
 
-    val size: Int
-        get() = list.size
+    override val size get() = list.size
 
     fun isEmpty() = list.isEmpty()
 
@@ -57,8 +56,7 @@ class JSONArray : JSONValue, SerializableArray, JSONContainer<Int>, Iterable<JSO
     override fun deserialize() = list.asSequence().joinToString(",", "[", "]") { it.deserialize() }
 
     override val type = Type.ARRAY
-    override val raw: Any?
-        get() = list.asSequence().map { it.raw }.toList()
+    override val raw get() = list.asSequence().map { it.raw }.toList()
 
     override fun toArray() = this
 

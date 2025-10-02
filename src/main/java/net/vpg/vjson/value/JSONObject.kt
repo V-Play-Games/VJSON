@@ -25,8 +25,7 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
         putAll(map)
     }
 
-    val size: Int
-        get() = map.size
+    override val size get() = map.size
 
     fun isEmpty() = map.isEmpty()
 
@@ -51,8 +50,7 @@ class JSONObject() : JSONValue(), SerializableObject, JSONContainer<String> {
         }
 
     override val type = Type.OBJECT
-    override val raw
-        get() = map.entries.asSequence().associate { it.key to it.value.raw }
+    override val raw get() = map.entries.asSequence().associate { it.key to it.value.raw }
 
     override fun toObject() = this
 
