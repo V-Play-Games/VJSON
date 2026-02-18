@@ -46,19 +46,25 @@ object JSONParser {
     fun Reader.toJSON() = parse(JSONReader(this))
 
     @JvmStatic
-    fun parse(s: String) = parse(JSONReader(s))
+    fun parse(s: String?): JSONValue {
+        require(!s.isNullOrBlank()) { "JSON string cannot be null or blank" }
+        return s.parseToJSON()
+    }
 
     @JvmStatic
-    fun parse(f: File) = parse(JSONReader(f))
+    fun parse(f: File?): JSONValue {
+        require(f?.exists() == true) { "File must exist and be readable" }
+        return f.toJSON()
+    }
 
     @JvmStatic
-    fun parse(url: URL) = parse(JSONReader(url))
+    fun parse(url: URL) = url.toJSON()
 
     @JvmStatic
-    fun parse(stream: InputStream) = parse(JSONReader(stream))
+    fun parse(stream: InputStream) = stream.toJSON()
 
     @JvmStatic
-    fun parse(reader: Reader) = parse(JSONReader(reader))
+    fun parse(reader: Reader) = reader.toJSON()
 
     @JvmStatic
     fun parse(reader: JSONReader) = reader.use { parseValue(it) }
@@ -68,17 +74,15 @@ object JSONParser {
             STRING, TRUE, FALSE, NULL, NUMBER -> reader.currentToken.toJSONValue()
             OBJECT_START -> parseObject(reader)
             ARRAY_START -> parseArray(reader)
-            else -> reader.error<JSONValue>()
+            else -> reader.error()
         }
 
     private fun parseObject(reader: JSONReader) = JSONObject().also {
-        reader.getNextTokenType()
+        if (reader.getNextTokenType() == OBJECT_END) return@also
         while (true) {
-            val type = reader.currentTokenType
-            if (type == OBJECT_END) return@also
-            if (type != STRING) reader.error<Any?>()
+            if (reader.currentTokenType != STRING) reader.error<Any?>()
             val key = reader.currentToken.toString()
-            reader.expectNextType(COLON)
+            if (reader.getNextTokenType() != COLON) reader.error<Any?>()
             reader.getNextTokenType()
             it.put(key, parseValue(reader))
             when (reader.getNextTokenType()) {

@@ -21,6 +21,7 @@ internal object JSONTest {
             .put("BOOLEAN", true)
             .put("ARRAY", JSONArray().add(null))
 
+    @Test
     fun checkCorrectParse() {
         Assertions.assertEquals(obj.toString(), url.toJSON().toString())
     }

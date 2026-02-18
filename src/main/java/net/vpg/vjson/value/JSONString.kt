@@ -26,7 +26,7 @@ class JSONString private constructor(private val value: String) : JSONValue() {
     companion object {
         fun String.toJSON() = of(this)
 
-        fun of(value: String) = JSONString(requireNotNull(value) { "value should not be null" })
+        fun of(value: String) = JSONString(value)
 
         fun escape(s: String) = buildString(s.length) {
             for (c in s) {
